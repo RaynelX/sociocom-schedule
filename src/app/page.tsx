@@ -7,6 +7,17 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+// Вспомогательная функция для получения цвета и названия типа пары
+const getTypeStyle = (type: string) => {
+  switch (type) {
+    case 'lecture': return { label: 'Лекция', style: 'border-green-200 text-green-700 bg-green-50' };
+    case 'seminar': return { label: 'Семинар', style: 'border-blue-200 text-blue-700 bg-blue-50' };
+    case 'lab': return { label: 'Практика', style: 'border-orange-200 text-orange-700 bg-orange-50' };
+    case 'other': return { label: 'Другое', style: 'border-gray-200 text-gray-700 bg-gray-50' };
+    default: return { label: type, style: 'border-gray-200 text-gray-700 bg-gray-50' };
+  }
+};
+
 export default async function Home(props: Props) {
   const searchParams = await props.searchParams;
   const dateParam = typeof searchParams.date === 'string' ? searchParams.date : null;
@@ -61,9 +72,8 @@ export default async function Home(props: Props) {
                     <>
                       {day.lessons.map((lesson) => {
                         const eventOnThisPair = day.events.find(e => e.pair_number === lesson.pair_number);
-                        
-                        // Определяем тип пары
                         const isSimple = lesson.details.length === 1 && !lesson.details[0].subgroup;
+                        const typeInfo = getTypeStyle(lesson.type);
 
                         return (
                           <div key={lesson.id} className="p-4 relative hover:bg-gray-50 transition">
@@ -81,34 +91,32 @@ export default async function Home(props: Props) {
 
                               {/* Контент пары */}
                               <div className="w-full">
-                                <div className="flex justify-between items-start">
+                                <div className="flex justify-between items-start mb-1">
                                     <h3 className="font-bold text-gray-900 leading-tight text-lg">{lesson.subject}</h3>
-                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide border ${
-                                      lesson.type === 'lecture' ? 'border-green-200 text-green-700 bg-green-50' : 
-                                      lesson.type === 'seminar' ? 'border-blue-200 text-blue-700 bg-blue-50' : 
-                                      'border-orange-200 text-orange-700 bg-orange-50'
-                                    }`}>
-                                      {lesson.type === 'lecture' ? 'Лекция' : lesson.type === 'seminar' ? 'Семинар' : lesson.type}
+                                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide border ${typeInfo.style}`}>
+                                      {typeInfo.label}
                                     </span>
                                 </div>
 
                                 {/* Если пара для всей группы */}
                                 {isSimple ? (
-                                    <div className="mt-1 text-sm text-gray-600 flex flex-col">
-                                        {lesson.details[0].room && <span>📍 {lesson.details[0].room}</span>}
-                                        {lesson.details[0].teacher && <span>👤 {lesson.details[0].teacher}</span>}
+                                    <div className="text-sm flex flex-col sm:flex-row sm:items-center sm:gap-2 mt-1">
+                                        <span className="font-medium text-gray-900">
+                                            {lesson.details[0].room || 'Ауд. не указана'}
+                                        </span>
+                                        <span className="hidden sm:inline text-gray-300">|</span>
+                                        <span className="text-gray-500">
+                                            {lesson.details[0].teacher}
+                                        </span>
                                     </div>
                                 ) : (
                                     /* Если пара по подгруппам */
-                                    <div className="mt-3 space-y-2">
+                                    <div className="mt-2 space-y-2">
                                         {lesson.details.map((detail, idx) => (
                                             <div key={idx} className="flex items-center text-sm bg-gray-50 rounded-lg p-2 border border-gray-100">
-                                                {/* Бейдж группы */}
-                                                <div className="w-24 shrink-0 font-bold text-xs uppercase text-gray-700 leading-tight">
+                                                <div className="w-20 shrink-0 font-bold text-xs uppercase text-gray-700 leading-tight">
                                                     {detail.subgroup || "Общ."}
                                                 </div>
-                                                
-                                                {/* Инфо */}
                                                 <div className="flex flex-col border-l border-gray-200 pl-3">
                                                     <span className="font-medium text-gray-900">{detail.room || "—"}</span>
                                                     <span className="text-xs text-gray-500">{detail.teacher}</span>

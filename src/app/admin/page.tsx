@@ -191,7 +191,7 @@ export default function AdminPage() {
                             value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
                             <option value="lecture">Лекция</option>
                             <option value="seminar">Семинар</option>
-                            <option value="lab">Лаба</option>
+                            <option value="lab">Практика</option>
                             <option value="other">Другое</option>
                         </select>
                     </div>
