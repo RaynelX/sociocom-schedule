@@ -21,6 +21,31 @@ const DAYS = [
   { id: 6, name: 'Суббота' },
 ]; // Очень мудрая умная сложная реализация, я знаю, похлопайте мне
 
+// SVG Иконки
+const IconTrash = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+  </svg>
+);
+
+const IconEdit = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+  </svg>
+);
+
+const IconClose = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+  </svg>
+);
+
 export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -28,9 +53,7 @@ export default function AdminPage() {
   const [bells, setBells] = useState<Bell[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // === РЕЖИМ ФОРМЫ ===
-  // false = Одна пара для всей группы
-  // true = Пара разбита на подгруппы
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [isSubgroupMode, setIsSubgroupMode] = useState(false);
 
   // Основная форма
@@ -39,7 +62,7 @@ export default function AdminPage() {
     type: 'lecture',
     day_of_week: 1,
     pair_number: 1,
-    start_date: new Date().toISOString().split('T')[0], // Вернули start_date
+    start_date: new Date().toISOString().split('T')[0],
     end_date: '2025-12-31',
     simple_room: '',
     simple_teacher: ''
@@ -67,6 +90,50 @@ export default function AdminPage() {
     setLoading(false);
   };
 
+  const resetForm = () => {
+    setEditingId(null);
+    setFormData({
+        subject: '',
+        type: 'lecture',
+        day_of_week: 1,
+        pair_number: 1,
+        start_date: formData.start_date, 
+        end_date: formData.end_date,
+        simple_room: '',
+        simple_teacher: ''
+    });
+    setDetails([{ subgroup: '', teacher: '', room: '' }, { subgroup: '', teacher: '', room: '' }]);
+    setIsSubgroupMode(false);
+  };
+
+  const handleEdit = (item: ScheduleItem) => {
+    setEditingId(item.id);
+    setFormData({
+        subject: item.subject,
+        type: item.type,
+        day_of_week: item.day_of_week,
+        pair_number: item.pair_number,
+        start_date: item.start_date,
+        end_date: item.end_date,
+        simple_room: '',
+        simple_teacher: ''
+    });
+
+    if (item.details.length > 1 || (item.details[0] && item.details[0].subgroup)) {
+        setIsSubgroupMode(true);
+        setDetails(item.details);
+    } else {
+        setIsSubgroupMode(false);
+        setFormData(prev => ({
+            ...prev,
+            simple_room: item.details[0]?.room || '',
+            simple_teacher: item.details[0]?.teacher || ''
+        }));
+        setDetails([{ subgroup: '', teacher: '', room: '' }, { subgroup: '', teacher: '', room: '' }]);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const addDetailRow = () => {
     setDetails([...details, { subgroup: '', teacher: '', room: '' }]);
   };
@@ -85,20 +152,17 @@ export default function AdminPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Формируем финальный JSON в зависимости от режима
     let finalDetails: ScheduleDetail[] = [];
 
     if (isSubgroupMode) {
-        // Режим подгрупп: берем массив details, фильтруем пустые строки
         finalDetails = details.filter(d => d.subgroup.trim() !== '');
         if (finalDetails.length === 0) {
             alert("Укажите хотя бы одну подгруппу");
             return;
         }
     } else {
-        // Режим всей группы: создаем одну запись с пустым subgroup
         finalDetails = [{
-            subgroup: '', // Пусто = вся группа
+            subgroup: '',
             room: formData.simple_room,
             teacher: formData.simple_teacher
         }];
@@ -114,14 +178,20 @@ export default function AdminPage() {
         details: finalDetails
     };
 
-    const { error } = await supabase.from('schedule_items').insert([payload]);
+    let error;
+
+    if (editingId) {
+        const res = await supabase.from('schedule_items').update(payload).eq('id', editingId);
+        error = res.error;
+    } else {
+        const res = await supabase.from('schedule_items').insert([payload]);
+        error = res.error;
+    }
 
     if (error) {
       alert('Ошибка: ' + error.message);
     } else {
-      // Сброс формы (оставляем даты и день для удобства массового ввода)
-      setFormData({ ...formData, subject: '', simple_room: '', simple_teacher: '' });
-      setDetails([{ subgroup: '', teacher: '', room: '' }, { subgroup: '', teacher: '', room: '' }]);
+      resetForm();
       fetchData();
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -131,6 +201,7 @@ export default function AdminPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Удалить занятие?')) return;
     await supabase.from('schedule_items').delete().eq('id', id);
+    if (editingId === id) resetForm();
     fetchData();
   };
 
@@ -140,8 +211,9 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50 pb-20 font-sans text-gray-900">
       
       {/* Toast */}
-      <div className={`fixed bottom-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg transition-all z-50 ${showSuccess ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
-        ✅ Занятие добавлено!
+      <div className={`fixed bottom-5 right-5 bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 transition-all z-50 ${showSuccess ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
+        <span className="text-green-400"><IconCheck /></span>
+        <span className="font-medium">Сохранено</span>
       </div>
 
       <header className="bg-white border-b border-gray-200 p-4 mb-6 sticky top-0 z-20">
@@ -156,13 +228,17 @@ export default function AdminPage() {
 
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* ФОРМА ДОБАВЛЕНИЯ ПАРЫ */}
+        {/* === ФОРМА === */}
         <div className="lg:col-span-5">
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 sticky top-24">
-            <h2 className="text-lg font-bold mb-4">Новое занятие</h2>
+          <div className={`bg-white p-5 rounded-xl shadow-sm border sticky top-24 transition-colors ${editingId ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold">
+                    {editingId ? `Редактирование` : 'Новое занятие'}
+                </h2>
+            </div>
+            
             <form onSubmit={handleSubmit} className="space-y-5">
               
-              {/* База */}
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Название предмета</label>
@@ -197,7 +273,6 @@ export default function AdminPage() {
                     </div>
                 </div>
 
-                {/* Промежуток (что?) пар */}
                 <div className="grid grid-cols-2 gap-3">
                     <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Дата начала</label>
@@ -214,7 +289,6 @@ export default function AdminPage() {
 
               <hr className="border-gray-100" />
 
-              {/* Переключение видов вся группа / Подгруппы */}
               <div>
                 <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
                     <button 
@@ -233,7 +307,6 @@ export default function AdminPage() {
                     </button>
                 </div>
 
-                {/* Вся группа */}
                 {!isSubgroupMode && (
                     <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                         <div>
@@ -249,7 +322,6 @@ export default function AdminPage() {
                     </div>
                 )}
 
-                {/* По подгруппам */}
                 {isSubgroupMode && (
                     <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                          {details.map((detail, index) => (
@@ -272,7 +344,9 @@ export default function AdminPage() {
                                     </div>
                                 </div>
                                 <div className={`${index === 0 ? 'mt-6' : 'mt-0'}`}>
-                                    <button type="button" onClick={() => removeDetailRow(index)} className="text-gray-400 hover:text-red-500 h-9 w-8 flex items-center justify-center transition">✕</button>
+                                    <button type="button" onClick={() => removeDetailRow(index)} className="text-gray-400 hover:text-red-500 h-9 w-8 flex items-center justify-center transition">
+                                        <IconClose />
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -283,21 +357,26 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="pt-4">
-                  <button type="submit" className="w-full bg-blue-600 text-white h-11 rounded-lg font-bold hover:bg-blue-700 shadow-sm transition transform active:scale-[0.99]">
-                    Сохранить в расписание
+              <div className="pt-4 flex gap-3">
+                  {editingId && (
+                      <button type="button" onClick={resetForm} className="w-1/3 bg-gray-200 text-gray-700 h-11 rounded-lg font-bold hover:bg-gray-300 transition">
+                          Отмена
+                      </button>
+                  )}
+                  <button type="submit" className={`flex-1 h-11 rounded-lg font-bold text-white shadow-sm transition transform active:scale-[0.99] ${editingId ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                    {editingId ? 'Сохранить изменения' : 'Добавить в расписание'}
                   </button>
               </div>
             </form>
           </div>
         </div>
 
-        {/* СПИСОК */}
+        {/* === СПИСОК === */}
         <div className="lg:col-span-7 space-y-4">
           <h2 className="text-lg font-bold text-gray-800 px-1">Текущее расписание ({items.length})</h2>
           
           {items.map(item => (
-              <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex justify-between items-start group hover:shadow-md transition">
+              <div key={item.id} className={`bg-white p-4 rounded-xl shadow-sm border flex justify-between items-start group hover:shadow-md transition ${editingId === item.id ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50' : 'border-gray-200'}`}>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${item.day_of_week > 5 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
@@ -311,17 +390,14 @@ export default function AdminPage() {
                     </span>
                   </div>
                   
-                  <h3 className="font-bold text-gray-900 text-lg">{item.subject} <span className="text-sm font-normal text-gray-500">({item.type})</span></h3>
+                  <h3 className="font-bold text-gray-900 text-lg">{item.subject} <span className="text-sm font-normal text-gray-500">({item.type === 'lab' ? 'пр.' : item.type === 'other' ? 'др.' : item.type === 'lecture' ? 'л.' : 'сем.'})</span></h3>
                   
-                  {/* Логика отображения в списке админки */}
                   <div className="mt-2 space-y-1">
-                    {/* Если только одна деталь */}
                     {item.details.length === 1 && !item.details[0].subgroup ? (
                          <p className="text-sm text-gray-600">
-                             {item.details[0].room || 'Ауд. не указана'} <span className="mx-2 text-gray-300">|</span> {item.details[0].teacher || 'Преп. не указан'}
+                             {item.details[0].room || '—'} <span className="mx-2 text-gray-300">|</span> {item.details[0].teacher || '—'}
                          </p>
                     ) : (
-                        // Иначе рисуем список подгрупп
                         item.details.map((d, i) => (
                             <div key={i} className="text-sm flex gap-2 text-gray-700 border-l-2 border-purple-100 pl-2">
                                 <span className="font-bold w-16 text-xs uppercase bg-purple-50 px-1 py-0.5 rounded text-purple-700 truncate">{d.subgroup}</span>
@@ -333,9 +409,14 @@ export default function AdminPage() {
                   </div>
                 </div>
                 
-                <button onClick={() => handleDelete(item.id)} className="text-gray-300 hover:text-red-600 p-2 transition">
-                  Удалить
-                </button>
+                <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition">
+                    <button onClick={() => handleEdit(item)} className="bg-gray-100 text-gray-600 p-2 rounded hover:bg-yellow-100 hover:text-yellow-700 transition" title="Редактировать">
+                        <IconEdit />
+                    </button>
+                    <button onClick={() => handleDelete(item.id)} className="bg-gray-100 text-gray-600 p-2 rounded hover:bg-red-100 hover:text-red-600 transition" title="Удалить">
+                        <IconTrash />
+                    </button>
+                </div>
               </div>
           ))}
           {items.length === 0 && <div className="text-center py-10 text-gray-400">Список пуст</div>}
