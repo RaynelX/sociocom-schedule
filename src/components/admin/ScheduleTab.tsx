@@ -37,6 +37,7 @@ export default function ScheduleTab() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [bells, setBells] = useState<Bell[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -70,6 +71,9 @@ export default function ScheduleTab() {
     const { data: scheduleData } = await supabase.from('schedule_items').select('*').order('day_of_week').order('pair_number');
     if (scheduleData) setItems(scheduleData);
     
+    const { data: subData } = await supabase.from('subjects').select('*').order('name');
+    if (subData) setSubjects(subData);
+
     setLoading(false);
   };
 
@@ -134,6 +138,7 @@ export default function ScheduleTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.subject) return alert("Выберите предмет");
     
     let finalDetails: ScheduleDetail[] = [];
 
@@ -193,13 +198,11 @@ export default function ScheduleTab() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-500">
       
-      {/* Toast */}
       <div className={`fixed bottom-5 right-5 bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 transition-all z-50 ${showSuccess ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'}`}>
         <span className="text-green-400"><IconCheck /></span>
         <span className="font-medium">Сохранено</span>
       </div>
 
-      {/* === ФОРМА === */}
       <div className="lg:col-span-5">
         <div className={`bg-white p-5 rounded-xl shadow-sm border sticky top-24 transition-colors ${editingId ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200'}`}>
           <div className="flex justify-between items-center mb-4">
@@ -212,9 +215,19 @@ export default function ScheduleTab() {
             
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Название предмета</label>
-                <input required type="text" placeholder="Например: Высшая математика" className="w-full border border-gray-300 h-10 px-3 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                  value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})} />
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Предмет</label>
+                <select 
+                    required 
+                    className="w-full border border-gray-300 h-10 px-2 rounded bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.subject} 
+                    onChange={e => setFormData({...formData, subject: e.target.value})}
+                >
+                    <option value="" disabled>Выберите предмет...</option>
+                    {subjects.map(sub => (
+                        <option key={sub.id} value={sub.name}>{sub.name}</option>
+                    ))}
+                </select>
+                {subjects.length === 0 && <p className="text-[10px] text-red-500 mt-1">Список пуст. Добавьте предметы во вкладке "Курсы"</p>}
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -262,34 +275,14 @@ export default function ScheduleTab() {
 
             <div>
               <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
-                  <button 
-                      type="button"
-                      onClick={() => setIsSubgroupMode(false)}
-                      className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${!isSubgroupMode ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                  >
-                      Вся группа
-                  </button>
-                  <button 
-                      type="button"
-                      onClick={() => setIsSubgroupMode(true)}
-                      className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${isSubgroupMode ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                  >
-                      По подгруппам
-                  </button>
+                  <button type="button" onClick={() => setIsSubgroupMode(false)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${!isSubgroupMode ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>Вся группа</button>
+                  <button type="button" onClick={() => setIsSubgroupMode(true)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${isSubgroupMode ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>По подгруппам</button>
               </div>
 
               {!isSubgroupMode && (
                   <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Аудитория</label>
-                          <input type="text" placeholder="305-а" className="w-full border border-gray-300 h-10 px-3 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                              value={formData.simple_room} onChange={e => setFormData({...formData, simple_room: e.target.value})} />
-                      </div>
-                      <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Преподаватель</label>
-                          <input type="text" placeholder="Иванов И.И." className="w-full border border-gray-300 h-10 px-3 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                              value={formData.simple_teacher} onChange={e => setFormData({...formData, simple_teacher: e.target.value})} />
-                      </div>
+                      <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Аудитория</label><input type="text" placeholder="305-а" className="w-full border border-gray-300 h-10 px-3 rounded focus:ring-2 focus:ring-blue-500 outline-none" value={formData.simple_room} onChange={e => setFormData({...formData, simple_room: e.target.value})} /></div>
+                      <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Преподаватель</label><input type="text" placeholder="Иванов И.И." className="w-full border border-gray-300 h-10 px-3 rounded focus:ring-2 focus:ring-blue-500 outline-none" value={formData.simple_teacher} onChange={e => setFormData({...formData, simple_teacher: e.target.value})} /></div>
                   </div>
               )}
 
@@ -298,76 +291,40 @@ export default function ScheduleTab() {
                        {details.map((detail, index) => (
                           <div key={index} className="flex gap-2 items-start">
                               <div className="grid grid-cols-3 gap-2 flex-1">
-                                  <div className="col-span-1">
-                                      {index === 0 && <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Группа</label>}
-                                      <input type="text" placeholder="Напр. 81а" className="border border-gray-300 h-9 rounded px-2 text-sm w-full"
-                                          value={detail.subgroup} onChange={e => updateDetail(index, 'subgroup', e.target.value)} />
-                                  </div>
-                                  <div className="col-span-1">
-                                      {index === 0 && <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Аудитория</label>}
-                                      <input type="text" placeholder="Ауд." className="border border-gray-300 h-9 rounded px-2 text-sm w-full"
-                                          value={detail.room} onChange={e => updateDetail(index, 'room', e.target.value)} />
-                                  </div>
-                                  <div className="col-span-1">
-                                      {index === 0 && <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Преподаватель</label>}
-                                      <input type="text" placeholder="Фамилия" className="border border-gray-300 h-9 rounded px-2 text-sm w-full"
-                                          value={detail.teacher} onChange={e => updateDetail(index, 'teacher', e.target.value)} />
-                                  </div>
+                                  <div className="col-span-1">{index === 0 && <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Группа</label>}<input type="text" placeholder="Напр. 81а" className="border border-gray-300 h-9 rounded px-2 text-sm w-full" value={detail.subgroup} onChange={e => updateDetail(index, 'subgroup', e.target.value)} /></div>
+                                  <div className="col-span-1">{index === 0 && <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Аудитория</label>}<input type="text" placeholder="Ауд." className="border border-gray-300 h-9 rounded px-2 text-sm w-full" value={detail.room} onChange={e => updateDetail(index, 'room', e.target.value)} /></div>
+                                  <div className="col-span-1">{index === 0 && <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Преподаватель</label>}<input type="text" placeholder="Фамилия" className="border border-gray-300 h-9 rounded px-2 text-sm w-full" value={detail.teacher} onChange={e => updateDetail(index, 'teacher', e.target.value)} /></div>
                               </div>
-                              <div className={`${index === 0 ? 'mt-6' : 'mt-0'}`}>
-                                  <button type="button" onClick={() => removeDetailRow(index)} className="text-gray-400 hover:text-red-500 h-9 w-8 flex items-center justify-center transition">
-                                      <IconClose />
-                                  </button>
-                              </div>
+                              <div className={`${index === 0 ? 'mt-6' : 'mt-0'}`}><button type="button" onClick={() => removeDetailRow(index)} className="text-gray-400 hover:text-red-500 h-9 w-8 flex items-center justify-center transition"><IconClose /></button></div>
                           </div>
                       ))}
-                      <button type="button" onClick={addDetailRow} className="text-sm text-blue-600 font-medium hover:underline pl-1">
-                          + Добавить ещё подгруппу
-                      </button>
+                      <button type="button" onClick={addDetailRow} className="text-sm text-blue-600 font-medium hover:underline pl-1">+ Добавить ещё подгруппу</button>
                   </div>
               )}
             </div>
 
             <div className="pt-4 flex gap-3">
-                {editingId && (
-                    <button type="button" onClick={resetForm} className="w-1/3 bg-gray-200 text-gray-700 h-11 rounded-lg font-bold hover:bg-gray-300 transition">
-                        Отмена
-                    </button>
-                )}
-                <button type="submit" className={`flex-1 h-11 rounded-lg font-bold text-white shadow-sm transition transform active:scale-[0.99] ${editingId ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                  {editingId ? 'Сохранить изменения' : 'Добавить в расписание'}
-                </button>
+                {editingId && <button type="button" onClick={resetForm} className="w-1/3 bg-gray-200 text-gray-700 h-11 rounded-lg font-bold hover:bg-gray-300 transition">Отмена</button>}
+                <button type="submit" className={`flex-1 h-11 rounded-lg font-bold text-white shadow-sm transition transform active:scale-[0.99] ${editingId ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-600 hover:bg-blue-700'}`}>{editingId ? 'Сохранить изменения' : 'Добавить в расписание'}</button>
             </div>
           </form>
         </div>
       </div>
 
-      {/* === СПИСОК === */}
       <div className="lg:col-span-7 space-y-4">
         <h2 className="text-lg font-bold text-gray-800 px-1">Текущее расписание ({items.length})</h2>
-        
         {items.map(item => (
             <div key={item.id} className={`bg-white p-4 rounded-xl shadow-sm border flex justify-between items-start group hover:shadow-md transition ${editingId === item.id ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50' : 'border-gray-200'}`}>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                   <span className={`text-xs font-bold px-2 py-0.5 rounded ${item.day_of_week > 5 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
-                    {DAYS.find(d => d.id === item.day_of_week)?.name}
-                  </span>
-                  <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">
-                    {item.pair_number} пара
-                  </span>
-                  <span className="text-xs text-gray-400 border border-gray-100 px-1 rounded">
-                     {new Date(item.start_date).toLocaleDateString()} — {new Date(item.end_date).toLocaleDateString()}
-                  </span>
+                   <span className={`text-xs font-bold px-2 py-0.5 rounded ${item.day_of_week > 5 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>{DAYS.find(d => d.id === item.day_of_week)?.name}</span>
+                  <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">{item.pair_number} пара</span>
+                  <span className="text-xs text-gray-400 border border-gray-100 px-1 rounded">{new Date(item.start_date).toLocaleDateString()} — {new Date(item.end_date).toLocaleDateString()}</span>
                 </div>
-                
                 <h3 className="font-bold text-gray-900 text-lg">{item.subject} <span className="text-sm font-normal text-gray-500">({item.type === 'lab' ? 'пр.' : item.type === 'other' ? 'др.' : item.type === 'lecture' ? 'л.' : 'сем.'})</span></h3>
-                
                 <div className="mt-2 space-y-1">
                   {item.details.length === 1 && !item.details[0].subgroup ? (
-                       <p className="text-sm text-gray-600">
-                           {item.details[0].room || '—'} <span className="mx-2 text-gray-300">|</span> {item.details[0].teacher || '—'}
-                       </p>
+                       <p className="text-sm text-gray-600">{item.details[0].room || '—'} <span className="mx-2 text-gray-300">|</span> {item.details[0].teacher || '—'}</p>
                   ) : (
                       item.details.map((d, i) => (
                           <div key={i} className="text-sm flex gap-2 text-gray-700 border-l-2 border-purple-100 pl-2">
@@ -379,14 +336,9 @@ export default function ScheduleTab() {
                   )}
                 </div>
               </div>
-              
               <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition">
-                  <button onClick={() => handleEdit(item)} className="bg-gray-100 text-gray-600 p-2 rounded hover:bg-yellow-100 hover:text-yellow-700 transition" title="Редактировать">
-                      <IconEdit />
-                  </button>
-                  <button onClick={() => handleDelete(item.id)} className="bg-gray-100 text-gray-600 p-2 rounded hover:bg-red-100 hover:text-red-600 transition" title="Удалить">
-                      <IconTrash />
-                  </button>
+                  <button onClick={() => handleEdit(item)} className="bg-gray-100 text-gray-600 p-2 rounded hover:bg-yellow-100 hover:text-yellow-700 transition"><IconEdit /></button>
+                  <button onClick={() => handleDelete(item.id)} className="bg-gray-100 text-gray-600 p-2 rounded hover:bg-red-100 hover:text-red-600 transition"><IconTrash /></button>
               </div>
             </div>
         ))}

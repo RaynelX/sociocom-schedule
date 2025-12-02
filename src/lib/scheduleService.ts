@@ -28,6 +28,8 @@ export type EventItem = {
   pair_number: number | null;
   type: string;
   subject: string | null;
+  event_time: string | null;
+  room: string | null;
 };
 
 export async function getWeekSchedule(date: Date) {

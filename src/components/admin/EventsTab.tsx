@@ -54,6 +54,7 @@ export default function EventsTab() {
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<any[]>([]);
 
   // Стейт для УСР: true = на паре, false = дистанционно (время)
   const [isUsrOnPair, setIsUsrOnPair] = useState(true);
@@ -74,12 +75,17 @@ export default function EventsTab() {
   const fetchEvents = async () => {
     const { data } = await supabase.from('events').select('*').order('date', { ascending: false }).limit(20);
     if (data) setEvents(data);
+
+    const { data: subData } = await supabase.from('subjects').select('*').order('name');
+    if (subData) setSubjects(subData);
+    
     setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedType) return;
+    if (!formData.subject) return alert("Выберите предмет");
 
     const config = EVENT_TYPES.find(t => t.id === selectedType);
     if (!config) return;
@@ -206,8 +212,18 @@ export default function EventsTab() {
                 {/* 1. ПРЕДМЕТ */}
                 <div>
                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Предмет</label>
-                     <input type="text" placeholder="Математика" className="w-full border border-gray-300 h-10 px-3 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500" 
-                        value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})} autoFocus />
+                     <select 
+                        required 
+                        className="w-full border border-gray-300 h-10 px-2 rounded bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={formData.subject} 
+                        onChange={e => setFormData({...formData, subject: e.target.value})}
+                    >
+                        <option value="" disabled>Выберите предмет...</option>
+                        {subjects.map(sub => (
+                            <option key={sub.id} value={sub.name}>{sub.name}</option>
+                        ))}
+                    </select>
+                    {subjects.length === 0 && <p className="text-[10px] text-red-500 mt-1">Список пуст. Добавьте предметы во вкладке "Курсы"</p>}
                 </div>
 
                 {/* 2. ОПИСАНИЕ (Если не скрыто конфигом) */}
