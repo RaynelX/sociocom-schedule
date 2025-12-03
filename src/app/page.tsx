@@ -3,7 +3,7 @@ import { format, addDays, isSameDay, parseISO, addWeeks, subWeeks } from "date-f
 import { ru } from "date-fns/locale";
 import Link from "next/link";
 import ScrollToToday from "@/components/ScrollToToday"; 
-import TodayButton from "@/components/TodayButton"; // <--- Импорт кнопки
+import TodayButton from "@/components/TodayButton";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -76,15 +76,28 @@ export default async function Home(props: Props) {
 
       <header className="bg-blue-600 text-white px-4 py-3 sticky top-0 z-10 shadow-md">
         <div className="flex justify-between items-center mb-1">
-            <h1 className="text-base font-bold">Расписание</h1>
-            <TodayButton />
+            {/* Левая часть: Заголовок и кнопка Сегодня */}
+            <div className="flex items-center gap-3">
+                <h1 className="text-base font-bold">Расписание</h1>
+                <TodayButton />
+            </div>
+            
+            {/* Правая часть: Кнопка Планер (с иконкой вместо эмодзи) */}
+            <Link href="/planner" className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1.5 rounded text-xs font-bold transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
+                </svg>
+                Планер
+            </Link>
         </div>
-        <div className="flex items-center justify-between">
-            <Link href={prevWeekLink} className="p-1 hover:bg-blue-700 rounded transition text-lg leading-none">←</Link>
-            <p className="text-sm font-medium">
+        
+        {/* Навигация по неделям */}
+        <div className="flex items-center justify-between mt-2">
+            <Link href={prevWeekLink} className="p-1 hover:bg-blue-700 rounded transition text-lg leading-none opacity-80 hover:opacity-100">←</Link>
+            <p className="text-sm font-medium opacity-90">
                 {format(weekStart, "d MMMM", { locale: ru }).toLowerCase()} — {format(addDays(weekStart, 6), "d MMMM", { locale: ru }).toLowerCase()}
             </p>
-            <Link href={nextWeekLink} className="p-1 hover:bg-blue-700 rounded transition text-lg leading-none">→</Link>
+            <Link href={nextWeekLink} className="p-1 hover:bg-blue-700 rounded transition text-lg leading-none opacity-80 hover:opacity-100">→</Link>
         </div>
       </header>
 
