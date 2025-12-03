@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,11 +12,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#2563eb", 
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: "Расписание",
-  description: "Актуальное расписание занятий, дедлайнов и событий для студентов 81 группы.",
+  description: "Учебное расписание",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Расписание",
+  },
   icons: {
-    icon: '/globe.svg',
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
   }
 };
 
