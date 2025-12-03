@@ -24,43 +24,33 @@ const IconCheck = () => (
 
 // === КОНФИГУРАЦИЯ ТИПОВ ===
 const EVENT_TYPES = [
-  // Дедлайн: нужно время (23:59), описание нужно
+  { id: 'cancel', label: 'Отмена пары', icon: '❌', color: 'bg-gray-100 text-gray-700 border-gray-300', 
+    needsPair: true, needsTime: false, needsRoom: false, hideDescription: false },
   { id: 'deadline', label: 'Дедлайн', icon: '⏰', color: 'bg-orange-50 text-orange-700 border-orange-200', 
     needsPair: false, needsTime: true, needsRoom: false, hideDescription: false },
-  
-  // КР: строго на паре, описание нужно (тема)
   { id: 'control_work', label: 'Контрольная', icon: '🔥', color: 'bg-red-50 text-red-700 border-red-200', 
     needsPair: true, needsTime: false, needsRoom: false, hideDescription: false },
-  
-  // УСР: Гибрид (hasToggle). Описание нужно.
   { id: 'independent_work', label: 'УСР', icon: '📝', color: 'bg-blue-50 text-blue-700 border-blue-200', 
     hasToggle: true, needsRoom: false, hideDescription: false },
-  
-  // Зачет: на паре + аудитория. Описание СКРЫТО (хватает предмета)
   { id: 'credit', label: 'Зачёт', icon: '✅', color: 'bg-green-50 text-green-700 border-green-200', 
     needsPair: true, needsTime: false, needsRoom: true, hideDescription: true },
-  
-  // Экзамен: точное время + аудитория. Описание СКРЫТО
   { id: 'exam', label: 'Экзамен', icon: '🎓', color: 'bg-purple-50 text-purple-700 border-purple-200', 
     needsPair: false, needsTime: true, needsRoom: true, hideDescription: true },
-  
-  // Консультация: точное время + аудитория. Описание СКРЫТО
   { id: 'consultation', label: 'Консультация', icon: '💬', color: 'bg-indigo-50 text-indigo-700 border-indigo-200', 
     needsPair: false, needsTime: true, needsRoom: true, hideDescription: true },
 ];
 
 export default function EventsTab() {
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [subjects, setSubjects] = useState<any[]>([]);
 
-  // Стейт для УСР: true = на паре, false = дистанционно (время)
   const [isUsrOnPair, setIsUsrOnPair] = useState(true);
 
   const [formData, setFormData] = useState({
-    title: '', // Описание / Тема
+    title: '',
     date: new Date().toISOString().split('T')[0],
     pair_number: 1,
     subject: '',
@@ -69,28 +59,28 @@ export default function EventsTab() {
   });
 
   useEffect(() => {
-    fetchEvents();
+    fetchData();
   }, []);
 
-  const fetchEvents = async () => {
-    const { data } = await supabase.from('events').select('*').order('date', { ascending: false }).limit(20);
-    if (data) setEvents(data);
+  const fetchData = async () => {
+    const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: false }).limit(20);
+    if (eventsData) setEvents(eventsData);
 
     const { data: subData } = await supabase.from('subjects').select('*').order('name');
     if (subData) setSubjects(subData);
-    
+
     setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedType) return;
-    if (!formData.subject) return alert("Выберите предмет");
+    
+    if (!formData.subject && selectedType !== 'cancel') return alert("Выберите предмет!");
 
     const config = EVENT_TYPES.find(t => t.id === selectedType);
     if (!config) return;
 
-    // Логика определения полей для УСР
     let usePair = config.needsPair;
     let useTime = config.needsTime;
 
@@ -100,10 +90,10 @@ export default function EventsTab() {
     }
 
     const payload = {
-        title: config.hideDescription ? '' : formData.title, // Если скрыто, шлем пустоту
+        title: config.hideDescription ? '' : formData.title,
         type: selectedType,
         date: formData.date,
-        subject: formData.subject || null,
+        subject: selectedType === 'cancel' ? null : (formData.subject || null), // При отмене предмет null
         pair_number: usePair ? formData.pair_number : null,
         event_time: useTime ? formData.event_time : null,
         room: config.needsRoom ? formData.room : null,
@@ -113,10 +103,9 @@ export default function EventsTab() {
 
     if (error) alert(error.message);
     else {
-      // Сброс (дату оставляем)
       setFormData({ ...formData, title: '', subject: '', event_time: '23:59' }); 
       setSelectedType(null);
-      fetchEvents();
+      fetchData();
       setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
     }
   };
@@ -124,31 +113,32 @@ export default function EventsTab() {
   const handleDelete = async (id: number) => {
     if (!confirm('Удалить событие?')) return;
     await supabase.from('events').delete().eq('id', id);
-    fetchEvents();
+    fetchData();
   };
 
   if (loading) return <div className="p-10">Загрузка...</div>;
 
-  // ГЛАВНОЕ МЕНЮ (6 КНОПОК)
+  // ГЛАВНОЕ МЕНЮ
   if (!selectedType) {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in duration-500">
             <div className="lg:col-span-12">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
                     {EVENT_TYPES.map(type => (
                         <button key={type.id} onClick={() => {
                             setSelectedType(type.id);
-                            // Дефолтные настройки при клике
+                            setFormData(prev => ({...prev, subject: ''}));
+                            
                             if (type.id === 'deadline') setFormData(prev => ({...prev, event_time: '23:59'}));
                             if (type.id === 'exam' || type.id === 'consultation') setFormData(prev => ({...prev, event_time: '09:00'}));
                             if (type.id === 'independent_work') {
-                                setIsUsrOnPair(true); // По дефолту на паре
+                                setIsUsrOnPair(true);
                                 setFormData(prev => ({...prev, event_time: '18:00'}));
                             }
                         }}
                             className={`p-6 rounded-xl border flex flex-col items-center justify-center gap-3 hover:shadow-md transition bg-white border-gray-200 hover:border-blue-300 active:scale-95`}>
                             <span className="text-3xl">{type.icon}</span>
-                            <span className="font-bold text-gray-700">{type.label}</span>
+                            <span className="font-bold text-gray-700 text-center">{type.label}</span>
                         </button>
                     ))}
                 </div>
@@ -164,10 +154,10 @@ export default function EventsTab() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-gray-900 leading-tight">
-                                        {event.subject ? event.subject : event.title}
+                                        {event.subject ? event.subject : (event.type === 'cancel' ? 'Отмена пары' : event.title)}
                                     </h3>
                                     <p className="text-sm text-gray-500 mt-0.5 flex flex-wrap gap-2">
-                                        {event.subject && event.title && <span>{event.title} •</span>}
+                                        {event.title && <span>{event.title} •</span>}
                                         <span>{new Date(event.date).toLocaleDateString()}</span>
                                         {event.pair_number && <span className="bg-gray-100 px-1.5 rounded text-gray-600 text-xs font-medium pt-0.5">{event.pair_number} пара</span>}
                                         {event.event_time && <span className="bg-gray-100 px-1.5 rounded text-gray-600 text-xs font-medium pt-0.5">{event.event_time.slice(0,5)}</span>}
@@ -188,10 +178,7 @@ export default function EventsTab() {
       )
   }
 
-  // ФОРМА ДОБАВЛЕНИЯ
   const config = EVENT_TYPES.find(t => t.id === selectedType)!;
-  
-  // Определяем, показывать ли инпуты (с учетом переключателя УСР)
   const showPairInput = config.needsPair || (config.hasToggle && isUsrOnPair);
   const showTimeInput = config.needsTime || (config.hasToggle && !isUsrOnPair);
 
@@ -209,55 +196,46 @@ export default function EventsTab() {
 
              <form onSubmit={handleSubmit} className="space-y-4">
                 
-                {/* 1. ПРЕДМЕТ */}
-                <div>
-                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Предмет</label>
-                     <select 
-                        required 
-                        className="w-full border border-gray-300 h-10 px-2 rounded bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={formData.subject} 
-                        onChange={e => setFormData({...formData, subject: e.target.value})}
-                    >
-                        <option value="" disabled>Выберите предмет...</option>
-                        {subjects.map(sub => (
-                            <option key={sub.id} value={sub.name}>{sub.name}</option>
-                        ))}
-                    </select>
-                    {subjects.length === 0 && <p className="text-[10px] text-red-500 mt-1">Список пуст. Добавьте предметы во вкладке "Курсы"</p>}
-                </div>
+                {selectedType !== 'cancel' && (
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Предмет</label>
+                        <select 
+                            required
+                            className="w-full border border-gray-300 h-10 px-2 rounded bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500" 
+                            value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})}
+                        >
+                            <option value="" disabled>Выберите предмет...</option>
+                            {subjects.map(sub => (
+                                <option key={sub.id} value={sub.name}>{sub.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
-                {/* 2. ОПИСАНИЕ (Если не скрыто конфигом) */}
                 {!config.hideDescription && (
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Описание (тема)</label>
-                        <input type="text" placeholder="Необязательно" 
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                            {selectedType === 'cancel' ? 'Причина отмены' : 'Описание (тема)'}
+                        </label>
+                        <input type="text" placeholder={selectedType === 'cancel' ? "Преподаватель заболел" : "Необязательно"} 
                             className="w-full border border-gray-300 h-10 px-3 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500" 
                             value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
                     </div>
                 )}
 
-                {/* 3. ДАТА */}
                 <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Дата</label>
                     <input type="date" required className="w-full border border-gray-300 h-10 px-2 rounded text-sm uppercase" 
                         value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
                 </div>
 
-                {/* ПЕРЕКЛЮЧАТЕЛЬ ДЛЯ УСР */}
                 {config.hasToggle && (
                     <div className="bg-gray-100 p-1 rounded-lg flex mb-2">
-                         <button type="button" onClick={() => setIsUsrOnPair(true)} 
-                            className={`flex-1 py-1.5 text-xs font-bold rounded transition ${isUsrOnPair ? 'bg-white shadow text-blue-700' : 'text-gray-500'}`}>
-                            На паре
-                         </button>
-                         <button type="button" onClick={() => setIsUsrOnPair(false)} 
-                            className={`flex-1 py-1.5 text-xs font-bold rounded transition ${!isUsrOnPair ? 'bg-white shadow text-blue-700' : 'text-gray-500'}`}>
-                            Дистанционно
-                         </button>
+                         <button type="button" onClick={() => setIsUsrOnPair(true)} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${isUsrOnPair ? 'bg-white shadow text-blue-700' : 'text-gray-500'}`}>На паре</button>
+                         <button type="button" onClick={() => setIsUsrOnPair(false)} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${!isUsrOnPair ? 'bg-white shadow text-blue-700' : 'text-gray-500'}`}>Дистанционно</button>
                     </div>
                 )}
 
-                {/* 4. ВРЕМЯ ИЛИ ПАРА */}
                 {showPairInput && (
                      <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Номер пары</label>
@@ -270,13 +248,12 @@ export default function EventsTab() {
 
                 {showTimeInput && (
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Время</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Время события</label>
                         <input type="time" required className="w-full border border-gray-300 h-10 px-2 rounded text-sm" 
                             value={formData.event_time} onChange={e => setFormData({...formData, event_time: e.target.value})} />
                     </div>
                 )}
 
-                {/* 5. АУДИТОРИЯ */}
                 {config.needsRoom && (
                      <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Аудитория</label>

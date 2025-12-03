@@ -24,7 +24,7 @@ const EVENT_STYLES: Record<string, { label: string; border: string; bg: string; 
   credit: { label: 'Зачёт', border: 'border-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-800' },
   exam: { label: 'Экзамен', border: 'border-purple-600', bg: 'bg-purple-50', text: 'text-purple-800' },
   consultation: { label: 'Консультация', border: 'border-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-800' },
-  cancel: { label: 'Отмена занятия', border: 'border-gray-400', bg: 'bg-gray-100', text: 'text-gray-500' },
+  cancel: { label: 'Отмена', border: 'border-gray-400', bg: 'bg-gray-100', text: 'text-gray-500' },
   deadline: { label: 'Дедлайн', border: 'border-orange-400', bg: 'bg-orange-50', text: 'text-orange-900' },
 };
 
