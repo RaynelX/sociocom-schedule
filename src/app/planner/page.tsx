@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import PlannerList from "@/components/PlannerList";
 
+export const revalidate = 0; 
+
 async function getPlannerData() {
   const todayStr = new Date().toISOString().split('T')[0];
   
