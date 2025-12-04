@@ -7,7 +7,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
-![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.0-38bdf8)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4.0-38bdf8)
 
 ## ✨ Особенности
 
