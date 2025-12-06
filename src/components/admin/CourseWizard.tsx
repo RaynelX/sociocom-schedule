@@ -124,7 +124,7 @@ export default function CourseWizard({ subjects, bells, onSuccess }: Props) {
   };
 
   return (
-    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mb-8">
+    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Мастер добавления курса</h2>
         
         {/* ВЕРХНЯЯ ПАНЕЛЬ: ПРЕДМЕТ И ДАТЫ */}
