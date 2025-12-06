@@ -113,7 +113,7 @@ export default function ScheduleTab() {
       setEditingItem({...editingItem, details: editingItem.details.filter((_, i) => i !== idx)});
   }
 
-  if (loading) return <div className="p-10 text-gray-500">Загрузка расписания...</div>;
+  if (loading) return <div className="p-10 text-gray-500">Загрузка...</div>;
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
