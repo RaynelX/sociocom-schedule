@@ -1,9 +1,9 @@
-import { supabase } from "./supabaseClient";
-import { startOfWeek, endOfWeek, format } from "date-fns";
+import { createClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
+import { startOfWeek, endOfWeek, format, addWeeks, getDay } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
-// --- TYPES ---
-
-// Выносим типы занятий в отдельный тип для переиспользования и строгости
+// ... ТВОИ ТИПЫ (LessonType, ScheduleItem, и т.д.) ОСТАВЛЯЕМ БЕЗ ИЗМЕНЕНИЙ ...
 export type LessonType = 'lecture' | 'seminar' | 'lab' | 'other' | string;
 
 export interface ScheduleDetail {
@@ -41,24 +41,22 @@ export interface WeekData {
   weekStart: Date;
 }
 
-// --- SERVICE ---
+// 1. Создаем ОБЫЧНЫЙ клиент (без cookies, чтобы не ломать статику)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-/**
- * Получает расписание и события на неделю, к которой относится переданная дата.
- * Запросы выполняются параллельно.
- * 
- * Логика выборки расписания:
- * Ищем предметы, которые НАЧАЛИСЬ до конца этой недели И ЗАКОНЧАТСЯ после начала этой недели.
- * Это покрывает все пересечения интервалов.
- */
+export function getNow(): Date {
+  const nowUtc = new Date();
+  return toZonedTime(nowUtc, 'Europe/Minsk');
+}
 
-export async function getWeekSchedule(date: Date): Promise<WeekData> {
-  const start = startOfWeek(date, { weekStartsOn: 1 });
-  const end = endOfWeek(date, { weekStartsOn: 1 });
+// 2. Функция "Грязной работы" - прямой запрос в БД
+async function fetchWeekSchedule(startStr:string, endStr:string) {
+  // ЭТОТ ЛОГ ДОЛЖЕН ПОЯВИТЬСЯ ТОЛЬКО ОДИН РАЗ В ЧАС (ДЛЯ ОДНОЙ НЕДЕЛИ)
+  console.log(`\x1b[31m🔥 [DB HIT] ЗАПРОС К БАЗЕ ДАННЫХ (${startStr} - ${endStr}) \x1b[0m`);
   
-  const startStr = format(start, "yyyy-MM-dd");
-  const endStr = format(end, "yyyy-MM-dd");
-
   try {
     const [scheduleResponse, eventsResponse] = await Promise.all([
       supabase
@@ -73,27 +71,56 @@ export async function getWeekSchedule(date: Date): Promise<WeekData> {
         .gte("date", startStr)
         .lte("date", endStr)
     ]);
-
-    if (scheduleResponse.error) {
-      console.error("Schedule fetch error:", scheduleResponse.error.message);
-    }
     
-    if (eventsResponse.error) {
-      console.error("Events fetch error:", eventsResponse.error.message);
-    }
-
     return {
-      schedule: (scheduleResponse.data as ScheduleItem[]) || [],
-      events: (eventsResponse.data as EventItem[]) || [],
-      weekStart: start,
+      schedule: (scheduleResponse.data as any[]) || [],
+      events: (eventsResponse.data as any[]) || [],
     };
 
   } catch (error) {
     console.error("Critical error in getWeekSchedule:", error);
-    return {
-      schedule: [],
-      events: [],
-      weekStart: start,
-    };
+    return { schedule: [], events: [] };
   }
+}
+
+// 3. Публичная функция с КЭШИРОВАНИЕМ
+export async function getWeekSchedule(dateParam?: Date | null): Promise<WeekData> {
+  let targetDate: Date;
+
+  if (dateParam) {
+    targetDate = dateParam;
+  } else {
+    const now = getNow();
+    const dayOfWeek = getDay(now);
+
+    // Логика воскресенья (0 = Воскресенье)
+    if (dayOfWeek === 0) {
+      console.log(`\x1b[36m📆 [LOGIC] Сегодня воскресенье (Минск), переключаем на след. неделю \x1b[0m`);
+      targetDate = addWeeks(now, 1);
+    } else {
+      targetDate = now;
+    }
+  }
+  
+  const start = startOfWeek(targetDate, { weekStartsOn: 1 });
+  const end = endOfWeek(targetDate, { weekStartsOn: 1 });
+  
+  const startStr = format(start, "yyyy-MM-dd");
+  const endStr = format(end, "yyyy-MM-dd");
+
+  // Обертка кэширования
+  const getCachedData = unstable_cache(
+    async () => fetchWeekSchedule(startStr, endStr),
+    ['week-schedule', startStr, endStr], // Уникальный ключ кэша
+    { revalidate: false, tags: ['schedule'] } // Живет 1 час
+  );
+
+  // Вызов
+  const data = await getCachedData();
+
+  return {
+    schedule: data.schedule,
+    events: data.events,
+    weekStart: start,
+  };
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+import { revalidateSchedule } from '@/app/actions';
 
 // SVG Иконки
 const IconTrash = () => (
@@ -17,6 +18,8 @@ type Subject = {
 }
 
 export default function SubjectsTab() {
+  const supabase = createClient();
+
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,12 +44,14 @@ export default function SubjectsTab() {
     } else {
         setNewName('');
         fetchSubjects();
+        await revalidateSchedule();
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Удалить этот предмет из списка? (В расписании он останется как текст)')) return;
     await supabase.from('subjects').delete().eq('id', id);
+    await revalidateSchedule();
     fetchSubjects();
   };
 

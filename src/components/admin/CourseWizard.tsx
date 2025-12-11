@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { addWeeks, format, isValid, parseISO } from 'date-fns';
+import { revalidateSchedule } from '@/app/actions';
 
 type Props = {
   subjects: any[];
@@ -16,6 +17,8 @@ const DAYS = [
 ]; // Гениально агада
 
 export default function CourseWizard({ subjects, bells, onSuccess }: Props) {
+  const supabase = createClient();
+
   const [selectedSubject, setSelectedSubject] = useState('');
   
   // ЛОГИКА ДАТ
@@ -120,6 +123,8 @@ export default function CourseWizard({ subjects, bells, onSuccess }: Props) {
         setSlots([{ id: Date.now(), day_of_week: 1, pair_number: 1, type: 'lecture', details: [{ id: 1, subgroup: '', room: '', teacher: '' }] }]);
         setSelectedSubject('');
         onSuccess(); 
+
+        await revalidateSchedule();
     }
   };
 

@@ -3,8 +3,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { addWeeks, format, isValid, parseISO, subDays } from 'date-fns';
+import { revalidateSchedule } from '@/app/actions';
 
 // --- TYPES ---
 interface Bell {
@@ -55,6 +56,8 @@ const DAYS = [
 const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random()}`;
 
 export default function CourseRescheduler({ subjectName, bells, onClose, onSuccess }: Props) {
+  const supabase = createClient();
+  
   // 1. Дата начала изменений (по умолчанию - СЕГОДНЯ)
   const [changeDate, setChangeDate] = useState(new Date().toISOString().split('T')[0]);
   
@@ -247,6 +250,7 @@ export default function CourseRescheduler({ subjectName, bells, onClose, onSucce
             if (insertError) throw insertError;
         }
 
+        await revalidateSchedule();
         onSuccess();
     } catch (error: any) {
         console.error(error);

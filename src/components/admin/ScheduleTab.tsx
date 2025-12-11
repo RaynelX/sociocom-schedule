@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { ScheduleItem } from '@/lib/scheduleService';
+import { revalidateSchedule } from '@/app/actions';
 import CourseWizard from './CourseWizard';
 import CourseRescheduler from './CourseRescheduler';
 
@@ -28,6 +29,8 @@ const formatDateShort = (dateStr: string) => {
 }; // Даты
 
 export default function ScheduleTab() {
+  const supabase = createClient();
+
   const [loading, setLoading] = useState(true);              // Загрузка
   const [items, setItems] = useState<ScheduleItem[]>([]);    // Пары
   const [bells, setBells] = useState<any[]>([]);             // Звонки
@@ -88,12 +91,15 @@ export default function ScheduleTab() {
       setEditingItem(null);
       fetchData();
       setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
+
+      await revalidateSchedule();
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Удалить занятие?')) return;
     await supabase.from('schedule_items').delete().eq('id', id);
+    await revalidateSchedule();
     fetchData();
   };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,6 +10,8 @@ import EventsTab from '@/components/admin/EventsTab';
 import SubjectsTab from '@/components/admin/SubjectsTab';
 
 export default function AdminPage() {
+  const supabase = createClient();
+  
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'schedule' | 'events' | 'subjects'>('schedule');
 

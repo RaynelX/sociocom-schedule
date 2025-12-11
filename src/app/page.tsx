@@ -5,6 +5,8 @@ import Link from "next/link";
 import ScrollToToday from "@/components/ScrollToToday"; 
 import TodayButton from "@/components/TodayButton";
 
+export const dynamic = 'force-dynamic';
+
 // --- Типы ---
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

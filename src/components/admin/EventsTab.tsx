@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+import { revalidateSchedule } from '@/app/actions';
 
 type EventItem = {
   id: number;
@@ -41,6 +42,8 @@ const EVENT_TYPES = [
 ];
 
 export default function EventsTab() {
+  const supabase = createClient();
+
   const [events, setEvents] = useState<EventItem[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
@@ -107,12 +110,15 @@ export default function EventsTab() {
       setSelectedType(null);
       fetchData();
       setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
+
+      await revalidateSchedule();
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Удалить событие?')) return;
     await supabase.from('events').delete().eq('id', id);
+    await revalidateSchedule();
     fetchData();
   };
 
