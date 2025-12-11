@@ -32,6 +32,10 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-icon.png',
+  },
+  openGraph: {
+    title: 'Расписание',
+    description: 'Расписание 81 группы 1 курса соцкома БГУ'
   }
 };
 
