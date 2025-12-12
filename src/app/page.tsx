@@ -145,6 +145,17 @@ export default async function Home(props: Props) {
   const prevWeekLink = `/?date=${format(subWeeks(weekStart, 1), "yyyy-MM-dd")}`;
   const nextWeekLink = `/?date=${format(addWeeks(weekStart, 1), "yyyy-MM-dd")}`;
 
+  // Сортир овка всех дедлайнов
+  const allDeadlines = events
+    .filter((e: any) => e.type === 'deadline')
+    .sort((a: any, b: any) => {
+        // Сначала по дате
+        const dateDiff = a.date.localeCompare(b.date);
+        if (dateDiff !== 0) return dateDiff;
+        // Потом по времени
+        return (a.event_time || '').localeCompare(b.event_time || '');
+    });
+
   return (
     <main className="min-h-screen bg-gray-100 pb-20 font-sans text-gray-900">
       <ScrollToToday />
@@ -172,6 +183,37 @@ export default async function Home(props: Props) {
             <Link href={nextWeekLink} className="p-1 hover:bg-blue-700 rounded transition text-lg leading-none opacity-80 hover:opacity-100">→</Link>
         </div>
       </header>
+
+      {allDeadlines.length > 0 && (
+          <div className="max-w-md mx-auto p-3 pb-0">
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm">
+                  <h3 className="text-xs font-bold text-orange-800 uppercase mb-3 tracking-wider flex items-center gap-2">
+                      Дедлайны
+                  </h3>
+                  <div className="space-y-2.5">
+                      {allDeadlines.map((d: any) => (
+                          <div key={d.id} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm gap-1">
+                              <div className="text-gray-900 leading-tight">
+                                  <span className="font-bold text-orange-900 mr-2 uppercase">
+                                      {format(parseISO(d.date), 'EEEE', {locale: ru})}:
+                                  </span> 
+                                  <span className="font-medium">{d.subject}</span>
+                                  {d.title && <span className="text-gray-600"> — {d.title}</span>}
+                              </div>
+                              
+                              {d.event_time && (
+                                <div className="shrink-0">
+                                    <span className="text-[10px] font-bold bg-white text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                        {d.event_time.slice(0,5)}
+                                    </span>
+                                </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          </div>
+      )}
 
       <div className="max-w-md mx-auto p-3 space-y-4">
         {days.map((day) => (
@@ -260,23 +302,6 @@ export default async function Home(props: Props) {
                           </div>
                         );
                       })}
-
-                      {day.deadlines.length > 0 && (
-                          <div className="bg-orange-50 border-t border-orange-200 p-3">
-                              <h4 className="text-[10px] font-bold text-orange-800 uppercase mb-2 tracking-wider">Дедлайны</h4>
-                              <div className="space-y-2">
-                                  {day.deadlines.map(d => (
-                                      <div key={d.id} className="text-sm flex justify-between items-start text-gray-900">
-                                          <div className="flex gap-2">
-                                            <span className="text-orange-400 font-bold">•</span>
-                                            <span className="leading-tight"><span className="font-medium">{d.subject}</span>{d.title && <span className="text-gray-600"> — {d.title}</span>}</span>
-                                          </div>
-                                          <span className="text-xs font-bold bg-white text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">до {d.event_time?.slice(0,5)}</span>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      )}
                     </>
                   )}
                 </div>
