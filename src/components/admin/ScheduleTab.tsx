@@ -6,6 +6,7 @@ import { ScheduleItem } from '@/lib/scheduleService';
 import { revalidateSchedule } from '@/app/actions';
 import CourseWizard from './CourseWizard';
 import CourseRescheduler from './CourseRescheduler';
+import { format, addDays, parseISO, getDay, isAfter, isBefore, isEqual } from 'date-fns';
 
 // --- ИКОНКИ ---
 const IconTrash = () => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>);
@@ -27,6 +28,35 @@ const formatDateShort = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
 }; // Даты
+
+// Вспомогательная функция подсчёта оставшихся пар
+function countRemainingLessons(items: ScheduleItem[]) {
+    const startCountDate = addDays(new Date(), 1); 
+    const startCountStr = format(startCountDate, 'yyyy-MM-dd');
+    let total = 0;
+
+    items.forEach(item => {
+        if (item.end_date < startCountStr) return;
+
+        const effectiveStartStr = item.start_date > startCountStr ? item.start_date : startCountStr;
+        
+        const start = parseISO(effectiveStartStr);
+        const end = parseISO(item.end_date);
+        
+        let current = start;
+        while (isBefore(current, end) || isEqual(current, end)) {
+            const dayOfWeek = getDay(current);
+            const adjustedDay = dayOfWeek === 0 ? 7 : dayOfWeek;
+
+            if (adjustedDay === item.day_of_week) {
+                total++;
+            }
+            current = addDays(current, 1);
+        }
+    });
+
+    return total;
+}
 
 export default function ScheduleTab() {
   const supabase = createClient();
@@ -229,21 +259,45 @@ export default function ScheduleTab() {
                 {activeSubjects.map(subName => {
                     const subItems = items.filter(i => i.subject === subName);
                     const lastDate = subItems.reduce((max, i) => i.end_date > max ? i.end_date : max, '0000-00-00');
+                    const remainingCount = countRemainingLessons(subItems);
 
                     return (
-                        <div key={subName} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center">
+                        <div key={subName} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
-                                <h3 className="font-bold text-gray-900">{subName}</h3>
-                                <p className="text-xs text-gray-500 mt-1">Активен до: <span className="font-bold text-gray-700">{formatDateShort(lastDate)}</span></p>
-                                <div className="flex flex-wrap gap-2 mt-2">
+                                <h3 className="font-bold text-gray-900 text-lg">{subName}</h3>
+                                
+                                <div className="flex items-center gap-3 mt-1">
+                                    <p className="text-xs text-gray-500">
+                                        До: <span className="font-bold text-gray-700">{formatDateShort(lastDate)}</span>
+                                    </p>
+                                    
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                                        remainingCount > 0 
+                                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                            : 'bg-gray-100 text-gray-500 border-gray-200'
+                                    }`}>
+                                        {remainingCount > 0 ? `Осталось: ${remainingCount}` : 'Курс завершён'}
+                                    </span>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 mt-3">
                                     {subItems.map(i => (
-                                        <span key={i.id} className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 border border-gray-200">
-                                            {DAYS[i.day_of_week-1].name.slice(0,2)} {i.pair_number}
+                                        <span key={i.id} className="text-[10px] bg-gray-50 px-2 py-1 rounded text-gray-600 border border-gray-200 font-medium">
+                                            {DAYS.find(d => d.id === i.day_of_week)?.name.slice(0,3)}, {i.pair_number}-я
+                                            {/* TODO: Чё с этим делать? Оно вообще надо?
+                                            <span className="text-gray-400 ml-1">({TYPE_LABELS[i.type] || i.type})</span>
+                                            */}
                                         </span>
                                     ))}
                                 </div>
                             </div>
-                            <button onClick={() => setReschedulingSubject(subName)} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 border border-blue-200">Перестроить</button>
+                            
+                            <button 
+                                onClick={() => setReschedulingSubject(subName)} 
+                                className="w-full sm:w-auto bg-white text-blue-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-50 border border-blue-200 transition shadow-sm whitespace-nowrap"
+                            >
+                                Перестроить
+                            </button>
                         </div>
                     );
                 })}
