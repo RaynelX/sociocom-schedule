@@ -60,22 +60,17 @@ const EVENT_STYLES: Record<string, { label: string; border: string; bg: string; 
 /**
  * Расписание + ивенты
  */
-function processDaySchedule(
-  rawLessons: any[], 
-  dayEvents: Event[]
-) {
-  
+function processDaySchedule(rawLessons: any[], dayEvents: any[]) {
   const deadlines = dayEvents
     .filter(e => e.type === 'deadline')
     .sort((a,b) => (a.event_time || '').localeCompare(b.event_time || ''));
     
   const timeEvents = dayEvents
-    .filter(e => e.event_time && !e.pair_number)
+    .filter(e => e.event_time && !e.pair_number && e.type !== 'deadline')
     .sort((a, b) => (a.event_time || '').localeCompare(b.event_time || ''));
     
   const gridEvents = dayEvents.filter(e => e.pair_number);
-
-  const lessonsMap = new Map<number, Lesson>();
+  const lessonsMap = new Map<number, any>();
   
   rawLessons.forEach(l => {
     lessonsMap.set(l.pair_number, { ...l, event: null });
@@ -83,13 +78,37 @@ function processDaySchedule(
 
   gridEvents.forEach(event => {
       if (!event.pair_number) return;
+      
       const existingLesson = lessonsMap.get(event.pair_number);
       
       if (existingLesson) {
-          // Ивент присобачиваем к парам
-          lessonsMap.set(event.pair_number, { ...existingLesson, event });
+          // СЦЕНАРИЙ А: Предметы совпадают (или это отмена) -> СЛИЯНИЕ
+          if (existingLesson.subject === event.subject || event.type === 'cancel') {
+             
+             const mergedDetails = event.room 
+                ? existingLesson.details.map((d: any) => ({ ...d, room: event.room }))
+                : existingLesson.details;
+
+             lessonsMap.set(event.pair_number, { 
+                 ...existingLesson, 
+                 details: mergedDetails,
+                 event: event
+             });
+          } 
+          else {
+             lessonsMap.set(event.pair_number, {
+                 id: `virt-${event.id}`, // Виртуальный ID
+                 subject: event.subject, // Имя нового предмета
+                 type: 'virtual', // Тип "virtual" скроет бейдж "Лекция/Семинар", покажем бейдж Ивента
+                 day_of_week: 0,
+                 pair_number: event.pair_number, 
+                 // У событий нет препода, поэтому поле teacher пустое
+                 details: [{ subgroup: '', room: event.room || '', teacher: '' }], 
+                 event: event
+             });
+          }
       } else {
-          // Если пары такой нет, делаем вот это
+          // СЦЕНАРИЙ В: Пары не было -> СОЗДАЕМ ВИРТУАЛЬНУЮ
           lessonsMap.set(event.pair_number, {
               id: `virt-${event.id}`, 
               subject: event.subject || event.title || 'Событие', 
@@ -103,7 +122,6 @@ function processDaySchedule(
   });
 
   const finalLessons = Array.from(lessonsMap.values()).sort((a, b) => a.pair_number - b.pair_number);
-
   return { lessons: finalLessons, timeEvents, deadlines };
 }
 
@@ -298,7 +316,7 @@ export default async function Home(props: Props) {
                                     </div>
                                 ) : (
                                     <div className="mt-2 space-y-2">
-                                        {lesson.details.map((detail, idx) => (
+                                        {lesson.details.map((detail: { subgroup: string; room: string; teacher: string }, idx: number) => (
                                             <div key={idx} className="flex items-center text-sm bg-white/50 rounded-lg p-2 border border-gray-200/50">
                                                 <div className="w-20 shrink-0 font-bold text-xs uppercase text-gray-700 leading-tight">{detail.subgroup || "Общ."}</div>
                                                 <div className="flex flex-col border-l border-gray-300 pl-3">
