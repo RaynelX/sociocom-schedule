@@ -8,7 +8,7 @@ import { toZonedTime } from "date-fns-tz";
 export type LessonType = 'lecture' | 'seminar' | 'lab' | 'other' | string;
 
 export interface ScheduleDetail {
-  id?: string | number;
+  id: string;
   subgroup: string;
   teacher: string;
   room: string;
@@ -39,38 +39,39 @@ export interface EventItem {
 export interface WeekData {
   schedule: ScheduleItem[];
   events: EventItem[];
-  weekStart: Date;
+  weekStart: string;
 }
 
-// --- CLIENT ---
+// --- CLIENT (Singleton Scope) ---
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: { persistSession: false } 
+  }
 );
 
 // --- HELPERS ---
 
 export function getNow(): Date {
-  const nowUtc = new Date();
-  return toZonedTime(nowUtc, 'Europe/Minsk');
+  return toZonedTime(new Date(), 'Europe/Minsk');
 }
 
-// Валидатор JSONB поля details
 function safeParseDetails(json: any): ScheduleDetail[] {
   if (!Array.isArray(json)) {
-    // Если пришел null или не массив, возвращаем дефолт
-    return [{ subgroup: '', room: '', teacher: '' }];
+    return [{ id: crypto.randomUUID(), subgroup: '', room: '', teacher: '' }];
   }
-  // Маппим и гарантируем, что поля - строки
+  
   return json.map((item: any) => ({
-    id: item.id || Math.random(), // fallback id
-    subgroup: typeof item.subgroup === 'string' ? item.subgroup : '',
-    teacher: typeof item.teacher === 'string' ? item.teacher : '',
-    room: typeof item.room === 'string' ? item.room : '',
+    id: item.id?.toString() || crypto.randomUUID(),
+    subgroup: item.subgroup || '',
+    teacher: item.teacher || '',
+    room: item.room || '',
   }));
 }
 
-// Получение звонков (Кэш навсегда)
+// --- DATA FETCHING ---
+
 export const getBells = unstable_cache(
   async () => {
     const { data } = await supabase.from('bell_schedule').select('*').order('pair_number');
@@ -80,42 +81,55 @@ export const getBells = unstable_cache(
   { revalidate: false, tags: ['schedule'] }
 );
 
-// Внутренняя функция запроса
-async function fetchWeekSchedule(startStr:string, endStr:string) {
-  console.log(`\x1b[31m🔥 [DB HIT] ГЛАВНАЯ: ${startStr} - ${endStr} \x1b[0m`);
+async function fetchWeekScheduleInternal(startStr: string, endStr: string) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`\x1b[31m🔥 [DB HIT] Fetching: ${startStr} -> ${endStr} \x1b[0m`);
+  }
+
   try {
     const [scheduleResponse, eventsResponse] = await Promise.all([
-      supabase.from("schedule_items").select("*").lte("start_date", endStr).gte("end_date", startStr),  
-      supabase.from("events").select("*").gte("date", startStr).lte("date", endStr)
+      supabase
+        .from("schedule_items")
+        .select("*")
+        .lte("start_date", endStr)
+        .gte("end_date", startStr),
+      
+      supabase
+        .from("events")
+        .select("*")
+        .gte("date", startStr)
+        .lte("date", endStr)
     ]);
-    
-    // ПРИМЕНЯЕМ ВАЛИДАЦИЮ ТУТ
-    const rawSchedule = (scheduleResponse.data as any[]) || [];
-    const schedule: ScheduleItem[] = rawSchedule.map(item => ({
+
+    const rawSchedule = scheduleResponse.data || [];
+    const schedule: ScheduleItem[] = rawSchedule.map((item: any) => ({
       ...item,
-      details: safeParseDetails(item.details) // Парсим JSONB безопасно
+      details: safeParseDetails(item.details)
     }));
 
     return {
-      schedule: schedule,
+      schedule,
       events: (eventsResponse.data as EventItem[]) || [],
     };
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Critical Schedule Fetch Error:", error);
     return { schedule: [], events: [] };
   }
 }
 
-// Публичная функция
+/**
+ * Получает расписание.
+ * @param dateParam Опциональная дата. Если нет - вычисляется текущая учебная неделя.
+ */
 export async function getWeekSchedule(dateParam?: Date | null): Promise<WeekData> {
   let targetDate: Date;
+  
   if (dateParam) {
     targetDate = dateParam;
   } else {
     const now = getNow();
-    const dayOfWeek = getDay(now);
-    if (dayOfWeek === 0) targetDate = addWeeks(now, 1);
-    else targetDate = now;
+    const day = getDay(now);
+    targetDate = day === 0 ? addWeeks(now, 1) : now;
   }
   
   const start = startOfWeek(targetDate, { weekStartsOn: 1 });
@@ -125,12 +139,19 @@ export async function getWeekSchedule(dateParam?: Date | null): Promise<WeekData
   const endStr = format(end, "yyyy-MM-dd");
 
   const getCachedData = unstable_cache(
-    async () => fetchWeekSchedule(startStr, endStr),
-    ['week-schedule', startStr, endStr],
-    { revalidate: false, tags: ['schedule'] }
+    async () => fetchWeekScheduleInternal(startStr, endStr),
+    ['week-schedule', startStr, endStr], 
+    { 
+      revalidate: false, 
+      tags: ['schedule'] 
+    }
   );
 
   const data = await getCachedData();
 
-  return { schedule: data.schedule, events: data.events, weekStart: start };
+  return { 
+    schedule: data.schedule, 
+    events: data.events, 
+    weekStart: start.toISOString()
+  };
 }
