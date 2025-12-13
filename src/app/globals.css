@@ -39,3 +39,11 @@ body {
 .animate-modal {
   animation: modalEnter 0.2s ease-out forwards;
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
