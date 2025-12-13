@@ -1,4 +1,4 @@
-import { getWeekSchedule } from "@/lib/scheduleService";
+import { getBells, getWeekSchedule } from "@/lib/scheduleService";
 import { format, addDays, isSameDay, parseISO, addWeeks, subWeeks, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import Link from "next/link";
@@ -112,7 +112,9 @@ export default async function Home(props: Props) {
   const dateParam = typeof searchParams.date === 'string' ? searchParams.date : null;
   const currentDate = dateParam ? parseISO(dateParam) : new Date();
   
-  const { schedule, events, weekStart } = await getWeekSchedule(currentDate);
+  const weekDataPromise = getWeekSchedule(currentDate);
+  const bellPromise = getBells();
+  const [ { schedule, events, weekStart }, bells ] = await Promise.all([weekDataPromise, bellPromise])
 
   const eventsByDate: Record<string, Event[]> = {};
   events.forEach((event: any) => {
@@ -264,6 +266,16 @@ export default async function Home(props: Props) {
                             <div className="flex gap-4">
                               <div className="flex flex-col items-center min-w-[1.5rem] pt-1">
                                 <span className={`text-lg font-bold leading-none ${event ? 'text-gray-800' : 'text-gray-400'}`}>{lesson.pair_number}</span>
+                                {(() => {
+                                  const bell = bells.find(b => b.pair_number === lesson.pair_number);
+                                  if (!bell) return null;
+                                  return (
+                                    <div className="flex flex-col item-center text-center text-[9px] font-medium text-gray-400 mt-1 leading-tight">
+                                      <span>{bell.start_time.slice(0,5)}</span>
+                                      <span>{bell.end_time.slice(0,5)}</span>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <div className="w-full">
                                 <div className="flex justify-between items-start mb-1">

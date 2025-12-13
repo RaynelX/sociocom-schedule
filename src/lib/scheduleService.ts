@@ -41,7 +41,6 @@ export interface WeekData {
   weekStart: Date;
 }
 
-// 1. Создаем ОБЫЧНЫЙ клиент (без cookies, чтобы не ломать статику)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -52,9 +51,15 @@ export function getNow(): Date {
   return toZonedTime(nowUtc, 'Europe/Minsk');
 }
 
-// 2. Функция "Грязной работы" - прямой запрос в БД
+export const getBells = unstable_cache(
+  async () => {
+    const { data } = await supabase.from('bell_schedule').select('*').order('pair_number');
+    return data || [];
+  },
+  ['bell-schedule'], {revalidate: false, tags: ['schedule']}
+);
+
 async function fetchWeekSchedule(startStr:string, endStr:string) {
-  // ЭТОТ ЛОГ ДОЛЖЕН ПОЯВИТЬСЯ ТОЛЬКО ОДИН РАЗ В ЧАС (ДЛЯ ОДНОЙ НЕДЕЛИ)
   console.log(`\x1b[31m🔥 [DB HIT] ЗАПРОС К БАЗЕ ДАННЫХ (${startStr} - ${endStr}) \x1b[0m`);
   
   try {
@@ -83,7 +88,6 @@ async function fetchWeekSchedule(startStr:string, endStr:string) {
   }
 }
 
-// 3. Публичная функция с КЭШИРОВАНИЕМ
 export async function getWeekSchedule(dateParam?: Date | null): Promise<WeekData> {
   let targetDate: Date;
 
