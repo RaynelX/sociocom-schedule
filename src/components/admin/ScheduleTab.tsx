@@ -210,9 +210,9 @@ export default function ScheduleTab() {
                                             ))}
                                         </div>
 
-                                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition bg-white/90 backdrop-blur rounded-lg p-1 shadow-sm border border-gray-100">
-                                            <button onClick={() => handleEditClick(item)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><IconEdit /></button>
-                                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded"><IconTrash /></button>
+                                        <div className="absolute top-2 right-2 flex gap-1 transition bg-white/95 backdrop-blur rounded-lg p-1 shadow-sm border border-gray-200 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 z-10">
+                                            <button onClick={() => handleEditClick(item)} className="p-1 text-blue-600 hover:bg-blue-100 rounded active:scale-95 transition duration-300"><IconEdit /></button>
+                                            <button onClick={() => handleDelete(item.id)} className="p-1 text-red-500 hover:bg-red-100 rounded active:scale-95 transition duration-300"><IconTrash /></button>
                                         </div>
                                     </div>
                                 )})}
