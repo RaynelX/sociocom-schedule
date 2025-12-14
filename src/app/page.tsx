@@ -1,10 +1,11 @@
 import { getBells, getWeekSchedule, ScheduleItem, EventItem } from "@/lib/scheduleService";
-import { format, addDays, isSameDay, parseISO, addWeeks, subWeeks } from "date-fns";
+import { format, addDays, isSameDay, parseISO, addWeeks, subWeeks, getDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz"; // Добавлено для фикса таймзон
 import { ru } from "date-fns/locale";
 import Link from "next/link";
 import ScrollToToday from "@/components/ScrollToToday"; 
 import TodayButton from "@/components/TodayButton";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
@@ -135,6 +136,16 @@ function processDaySchedule(rawLessons: ScheduleItem[], dayEvents: EventItem[]) 
 
 export default async function Home(props: Props) {
   const searchParams = await props.searchParams;
+  
+  const nowMinsk = toZonedTime(new Date(), 'Europe/Minsk');
+  if (!searchParams.date) {
+    const dayOfWeek = getDay(nowMinsk);
+    if (dayOfWeek === 0) {
+      const nextMonday = addDays(nowMinsk, 1);
+      redirect(`/?date=${format(nextMonday, 'yyyy-MM-dd')}`);
+    }
+  }
+
   const dateParam = typeof searchParams.date === 'string' ? searchParams.date : null;
   const currentDate = dateParam ? parseISO(dateParam) : new Date();
   

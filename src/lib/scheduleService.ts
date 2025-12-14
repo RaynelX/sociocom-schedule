@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
-import { startOfWeek, endOfWeek, format, addWeeks, getDay } from "date-fns";
+import { startOfWeek, endOfWeek, format, addWeeks, getDay, addDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
 // --- TYPES ---
@@ -127,9 +127,7 @@ export async function getWeekSchedule(dateParam?: Date | null): Promise<WeekData
   if (dateParam) {
     targetDate = dateParam;
   } else {
-    const now = getNow();
-    const day = getDay(now);
-    targetDate = day === 0 ? addWeeks(now, 1) : now;
+    targetDate = getNow();
   }
   
   const start = startOfWeek(targetDate, { weekStartsOn: 1 });

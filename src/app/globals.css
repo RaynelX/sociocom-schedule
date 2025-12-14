@@ -19,12 +19,16 @@
   }
 }
 
+
+html {
+  overscroll-behavior: none;
+  /*-webkit-overflow-scrolling: touch;   - говно устарелое, нужно оно? */
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  overscroll-behavior-y: none;
-  height: 100%;
 }
 
 @keyframes modalEnter {
@@ -43,8 +47,7 @@ body {
 }
 
 @layer utilities {
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar {
+  * {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
