@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { startOfWeek, endOfWeek, format, addWeeks, getDay, addDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
+import { getNowMinsk } from "./date-utils";
 
 // --- TYPES ---
 
@@ -52,10 +53,6 @@ const supabase = createClient(
 );
 
 // --- HELPERS ---
-
-export function getNow(): Date {
-  return toZonedTime(new Date(), 'Europe/Minsk');
-}
 
 function safeParseDetails(json: any): ScheduleDetail[] {
   if (!Array.isArray(json)) {
@@ -127,7 +124,7 @@ export async function getWeekSchedule(dateParam?: Date | null): Promise<WeekData
   if (dateParam) {
     targetDate = dateParam;
   } else {
-    targetDate = getNow();
+    targetDate = getNowMinsk();
   }
   
   const start = startOfWeek(targetDate, { weekStartsOn: 1 });

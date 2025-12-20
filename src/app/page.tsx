@@ -1,11 +1,10 @@
 import { getBells, getWeekSchedule, ScheduleItem, EventItem } from "@/lib/scheduleService";
-import { format, addDays, isSameDay, parseISO, addWeeks, subWeeks, getDay } from "date-fns";
-import { toZonedTime } from "date-fns-tz"; // Добавлено для фикса таймзон
+import { format, addDays, isSameDay, parseISO, addWeeks, subWeeks } from "date-fns";
 import { ru } from "date-fns/locale";
 import Link from "next/link";
 import ScrollToToday from "@/components/ScrollToToday"; 
 import TodayButton from "@/components/TodayButton";
-import { redirect } from "next/navigation";
+import { getInitialTargetDate, getNowMinsk, formatDateKey } from "@/lib/date-utils";
 
 export const dynamic = 'force-dynamic';
 
@@ -34,9 +33,6 @@ interface DayData {
   timeEvents: EventItem[];
   deadlines: EventItem[];
 }
-
-// --- Constants ---
-const TIMEZONE = 'Europe/Minsk';
 
 const LESSON_TYPES: Record<string, string> = {
   lecture: 'Лекция', seminar: 'Семинар', lab: 'Практика', other: 'Другое'
@@ -137,17 +133,12 @@ function processDaySchedule(rawLessons: ScheduleItem[], dayEvents: EventItem[]) 
 export default async function Home(props: Props) {
   const searchParams = await props.searchParams;
   
-  const nowMinsk = toZonedTime(new Date(), 'Europe/Minsk');
-  if (!searchParams.date) {
-    const dayOfWeek = getDay(nowMinsk);
-    if (dayOfWeek === 0) {
-      const nextMonday = addDays(nowMinsk, 1);
-      redirect(`/?date=${format(nextMonday, 'yyyy-MM-dd')}`);
-    }
+  let currentDate: Date;
+  if (searchParams.date && typeof searchParams.date === 'string') {
+    currentDate = parseISO(searchParams.date);
+  } else {
+    currentDate = getInitialTargetDate();
   }
-
-  const dateParam = typeof searchParams.date === 'string' ? searchParams.date : null;
-  const currentDate = dateParam ? parseISO(dateParam) : new Date();
   
   const [ { schedule, events, weekStart: weekStartStr }, bellsData ] = await Promise.all([
     getWeekSchedule(currentDate),
@@ -172,23 +163,25 @@ export default async function Home(props: Props) {
   }
 
   // Сегодня... и ты после фильма кустурицы...
-  const todayDate = toZonedTime(new Date(), TIMEZONE);
+  const todayDate = getNowMinsk(); 
+  const todayString = format(todayDate, 'yyyy-MM-dd');
 
   const days: DayData[] = [];
   for (let i = 0; i < 6; i++) {
       const currentDayDate = addDays(weekStart, i);
-      const dayOfWeek = i + 1; 
       const dateKey = format(currentDayDate, 'yyyy-MM-dd');
       
       const dayEvents = eventsByDate.get(dateKey) || [];
-      const rawLessons = scheduleByDay.get(dayOfWeek) || [];
+      const rawLessons = scheduleByDay.get(i + 1) || [];
 
       const { lessons, timeEvents } = processDaySchedule(rawLessons, dayEvents);
+
+      const isToday = dateKey === todayString;
 
       days.push({
           date: currentDayDate,
           dateIso: dateKey,
-          isToday: isSameDay(currentDayDate, todayDate),
+          isToday: isToday,
           lessons,
           timeEvents,
           deadlines: []
