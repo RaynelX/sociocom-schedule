@@ -2,6 +2,8 @@ import Link from "next/link";
 import PlannerList from "@/components/PlannerList";
 import { createClient } from "@supabase/supabase-js"; // ОБЫЧНЫЙ КЛИЕНТ
 import { unstable_cache } from "next/cache"; // КЭШ
+import { getNowMinsk } from "@/lib/date-utils";
+import { format } from "date-fns";
 
 export const dynamic = 'force-dynamic';
 
@@ -14,8 +16,8 @@ const supabase = createClient(
 // Функция с кэшированием
 const getCachedPlannerData = unstable_cache(
   async () => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    console.log(`\x1b[31m🔥 [DB HIT] ЗАПРОС ПЛАНЕРА \x1b[0m`);
+    const todayStr = format(getNowMinsk(), 'yyyy-MM-dd');
+    console.log(`\x1b[31m🔥 [DB HIT] ЗАПРОС ПЛАНЕРА ${todayStr} \x1b[0m`);
     
     const { data, error } = await supabase
       .from('events')
