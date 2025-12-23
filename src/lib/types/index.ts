@@ -17,13 +17,11 @@ export type SubgroupDetail = {
   export interface Subject {
     id: number;       // 1
     name: string;     // "Философия"
-    // created_at обычно не нужен
   }
   
   // schedule_items
   export interface ScheduleItem {
     id: number;                       // 1
-    subject_id: number | null;        // Ссылка на Subject (в твоем описании поле называется 'subject', но обычно это FK)
     subject: string;                  // "Философия"
     day_of_week: number;              // 1 = Понедельник
     pair_number: number;              // 1
@@ -42,6 +40,7 @@ export type SubgroupDetail = {
     pair_number: number | null;                     // Если null, то событие на весь день
     subject: string | null;                         // Ссылка на предмет, если есть
     type: string;                                   // Типы событий
+    event_time: string | null;
     room: string | null;
   }
   
