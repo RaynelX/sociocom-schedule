@@ -6,6 +6,3 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 }
-
-// TODO: Использовать функции внутри компонентов вместо синглтона
-export const supabase = createClient();

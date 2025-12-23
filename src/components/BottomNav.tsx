@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Home, Layers, Settings } from "lucide-react";
+import { useSyncData } from "@/lib/hooks/useSyncData";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
 ];
 
 export default function BottomNav() {
+  useSyncData();
   const pathname = usePathname();
 
   return (
