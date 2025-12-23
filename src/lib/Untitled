@@ -1,0 +1,55 @@
+// types/index.ts
+
+export type SubgroupDetail = {
+  subgroup: string;
+  room: string;
+  teacher: string;
+};
+
+// Таблица 1: bell_schedule
+export interface BellSchedule {
+  pair_number: number;
+  start_time: string; // "08:00"
+  end_time: string;   // "09:20"
+}
+
+// Таблица 3: subjects
+export interface Subject {
+  id: number;
+  name: string;
+  // created_at обычно не нужен на клиенте для отображения, но пусть будет
+}
+
+// Таблица 4: schedule_items
+export interface ScheduleItem {
+  id: number;
+  subject_id: number | null; // Ссылка на Subject (в твоем описании поле называется 'subject', но обычно это FK)
+  // Если у тебя в базе поле называется просто 'subject' и там ID, то используй subject_id для ясности в коде, или оставь как в базе.
+  // Предположим, что в базе column name = "subject" (int8)
+  subject: number; 
+  day_of_week: number; // 1 = Понедельник
+  pair_number: number;
+  start_date: string; // ISO Date "2025-09-01"
+  end_date: string;   // ISO Date "2025-12-31"
+  type: string;       // "Лекция", "Семинар"
+  details: SubgroupDetail[] | null; // Тот самый JSONB
+}
+
+// Таблица 2: events
+export interface CalendarEvent {
+  id: number;
+  title: string;
+  description: string | null;
+  date: string; // "2025-12-25"
+  pair_number: number | null; // Если null, то событие на весь день
+  subject_id: number | null;  // Ссылка на предмет, если есть
+  type: "deadline" | "exam" | "cancel" | "other"; // Типы событий
+  room: string | null;
+}
+
+// Объединенный тип для UI (Пара + наложенное событие)
+export interface Lesson extends ScheduleItem {
+  subjectName?: string; // Подтянутое имя предмета
+  event?: CalendarEvent; // Если есть событие на эту пару
+  isTransformed?: boolean; // Флаг, что пара изменена событием
+}
