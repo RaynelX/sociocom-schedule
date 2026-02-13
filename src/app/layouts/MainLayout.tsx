@@ -1,5 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Calendar, BookOpen, Menu } from 'lucide-react';
+import { useSync } from '../../database/sync/SyncProvider';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Сегодня' },
@@ -47,11 +48,52 @@ export function MainLayout() {
 }
 
 function SyncIndicator() {
-  // Заглушка — реальная логика появится в фазе 1
+  const { status, triggerSync } = useSync();
+
+  const config = {
+    idle:    { color: 'bg-gray-300',  text: 'Ожидание' },
+    syncing: { color: 'bg-yellow-400', text: 'Обновление...' },
+    success: { color: 'bg-green-400',  text: formatLastSync(status.lastSyncAt) },
+    error:   { color: 'bg-red-400',    text: 'Ошибка синхронизации' },
+    offline: { color: 'bg-gray-400',   text: formatOffline(status.lastSyncAt) },
+  }[status.state];
+
   return (
-    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-      <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-      <span>Актуально</span>
-    </div>
+    <button
+      onClick={triggerSync}
+      className="flex items-center gap-1.5 text-xs text-gray-500 active:text-gray-700 transition-colors"
+      title={status.error || 'Нажмите для синхронизации'}
+    >
+      <div className={`w-1.5 h-1.5 rounded-full ${config.color} ${
+        status.state === 'syncing' ? 'animate-pulse' : ''
+      }`} />
+      <span>{config.text}</span>
+    </button>
   );
+}
+
+function formatLastSync(lastSyncAt: string | null): string {
+  if (!lastSyncAt) return 'Актуально';
+
+  const diff = Date.now() - new Date(lastSyncAt).getTime();
+  const minutes = Math.floor(diff / 60_000);
+
+  if (minutes < 1) return 'Только что';
+  if (minutes < 60) return `${minutes} мин. назад`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ч. назад`;
+
+  return `Давно`;
+}
+
+function formatOffline(lastSyncAt: string | null): string {
+  if (!lastSyncAt) return 'Оффлайн';
+
+  const date = new Date(lastSyncAt);
+  const time = date.toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `Оффлайн · ${time}`;
 }
