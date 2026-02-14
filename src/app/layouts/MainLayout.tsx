@@ -11,10 +11,10 @@ const navItems = [
 
 export function MainLayout() {
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
-        <h1 className="text-lg font-semibold text-gray-900">Student Hub</h1>
+      <header className="shrink-0 flex items-center justify-between px-4 py-3.5 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">Student Hub</h1>
         <SyncIndicator />
       </header>
 
@@ -24,21 +24,21 @@ export function MainLayout() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="shrink-0 flex border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)]">
+      <nav className="shrink-0 flex border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 pb-[env(safe-area-inset-bottom)]">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors ${
+              `flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors ${
                 isActive
-                  ? 'text-blue-600'
-                  : 'text-gray-400 active:text-gray-600'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-gray-400 dark:text-neutral-500 active:text-gray-600'
               }`
             }
           >
-            <Icon size={20} strokeWidth={1.5} />
+            <Icon size={22} strokeWidth={1.5} />
             <span>{label}</span>
           </NavLink>
         ))}
@@ -61,10 +61,10 @@ function SyncIndicator() {
   return (
     <button
       onClick={triggerSync}
-      className="flex items-center gap-1.5 text-xs text-gray-500 active:text-gray-700 transition-colors"
+      className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-neutral-400 active:text-gray-700 transition-colors"
       title={status.error || 'Нажмите для синхронизации'}
     >
-      <div className={`w-1.5 h-1.5 rounded-full ${config.color} ${
+      <div className={`w-2 h-2 rounded-full ${config.color} ${
         status.state === 'syncing' ? 'animate-pulse' : ''
       }`} />
       <span>{config.text}</span>

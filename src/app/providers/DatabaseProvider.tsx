@@ -25,7 +25,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen p-4 text-center">
+      <div className="flex items-center justify-center h-screen p-4 text-center bg-white dark:bg-black">
         <div>
           <p className="text-red-600 font-medium">Ошибка инициализации</p>
           <p className="text-sm text-gray-500 mt-2">{error}</p>
@@ -36,8 +36,8 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
 
   if (!db) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-400">Загрузка...</p>
+      <div className="flex items-center justify-center h-screen bg-white dark:bg-black">
+        <p className="text-gray-500 dark:text-neutral-400">Загрузка...</p>
       </div>
     );
   }

@@ -7,24 +7,27 @@ import { TodayPage } from './pages/TodayPage';
 import { SchedulePage } from './pages/SchedulePage';
 import { SubjectsPage } from './pages/SubjectsPage';
 import { MorePage } from './pages/MorePage';
+import { ThemeProvider } from '../features/settings/ThemeProvider';
 
 export function App() {
   return (
-    <DatabaseProvider>
-      <SyncProvider>
-        <SettingsProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<MainLayout />}>
-                <Route index element={<TodayPage />} />
-                <Route path="schedule" element={<SchedulePage />} />
-                <Route path="subjects" element={<SubjectsPage />} />
-                <Route path="more" element={<MorePage />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </SettingsProvider>
-      </SyncProvider>
-    </DatabaseProvider>
+    <ThemeProvider>
+      <DatabaseProvider>
+        <SyncProvider>
+          <SettingsProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route element={<MainLayout />}>
+                  <Route index element={<TodayPage />} />
+                  <Route path="schedule" element={<SchedulePage />} />
+                  <Route path="subjects" element={<SubjectsPage />} />
+                  <Route path="more" element={<MorePage />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </SettingsProvider>
+        </SyncProvider>
+      </DatabaseProvider>
+    </ThemeProvider>
   );
 }

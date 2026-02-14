@@ -18,19 +18,19 @@ export function SettingsSetup({ onComplete }: Props) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50 dark:bg-black">
       <div className="w-full max-w-sm space-y-8">
         {/* Заголовок */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Student Hub</h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">Student Hub</h1>
+          <p className="text-sm text-gray-500 dark:text-neutral-400 mt-2">
             Выберите подгруппу и язык для отображения расписания
           </p>
         </div>
 
         {/* Подгруппа */}
         <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-gray-700">Подгруппа</legend>
+          <legend className="text-sm font-medium text-gray-700 dark:text-neutral-300">Подгруппа</legend>
           <div className="grid grid-cols-2 gap-3">
             <OptionButton
               selected={subgroup === 'a'}
@@ -99,8 +99,8 @@ function OptionButton({
       onClick={onClick}
       className={`py-3 px-4 rounded-xl text-sm font-medium border-2 transition-all ${
         selected
-          ? 'border-blue-600 bg-blue-50 text-blue-700'
-          : 'border-gray-200 bg-white text-gray-700 active:border-gray-300'
+          ? 'border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-neutral-900 text-gray-700 dark:text-neutral-300 active:border-gray-300'
       }`}
     >
       {children}

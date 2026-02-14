@@ -45,34 +45,34 @@ export function SchedulePage() {
   return (
     <div className="flex flex-col h-full">
       {/* Навигация по неделям */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-100">
+      <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-white dark:bg-neutral-900 border-b border-gray-100 dark:border-neutral-800">
         <button
           onClick={goToPrevWeek}
-          className="p-1.5 rounded-lg text-gray-400 active:bg-gray-100"
+          className="p-2.5 -m-1 rounded-xl text-gray-500 dark:text-neutral-400 active:bg-gray-100 dark:active:bg-neutral-800"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={22} />
         </button>
 
         <div className="text-center">
-          <p className="text-sm font-semibold text-gray-900">{weekRange}</p>
+          <p className="text-base font-semibold text-gray-900 dark:text-neutral-100">{weekRange}</p>
           {weekNumber !== null && weekNumber > 0 && (
-            <p className="text-[11px] text-gray-400">{weekNumber}-я неделя</p>
+            <p className="text-xs text-gray-500 dark:text-neutral-400">{weekNumber}-я неделя</p>
           )}
         </div>
 
         <button
           onClick={goToNextWeek}
-          className="p-1.5 rounded-lg text-gray-400 active:bg-gray-100"
+          className="p-2.5 -m-1 rounded-xl text-gray-500 dark:text-neutral-400 active:bg-gray-100 dark:active:bg-neutral-800"
         >
-          <ChevronRight size={20} />
+          <ChevronRight size={22} />
         </button>
       </div>
 
       {/* Табы дней */}
-      <div className="shrink-0 flex bg-white border-b border-gray-100 px-2">
+      <div className="shrink-0 flex bg-white dark:bg-neutral-900 border-b border-gray-100 dark:border-neutral-800 px-1">
         {[0, 1, 2, 3, 4, 5].map((offset) => {
           const date = addDays(monday, offset);
-          const dayNum = offset + 1; // 1=Пн, ..., 6=Сб
+          const dayNum = offset + 1;
           const isSelected =
             getDayOfWeek(selectedDate) === dayNum &&
             getMonday(selectedDate).getTime() === monday.getTime();
@@ -82,21 +82,21 @@ export function SchedulePage() {
             <button
               key={offset}
               onClick={() => goToDay(offset)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors relative ${
+              className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
                 isSelected
-                  ? 'text-blue-600'
-                  : 'text-gray-400 active:text-gray-600'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-neutral-400 active:text-gray-700'
               }`}
             >
-              <span className="text-[11px] font-medium">
+              <span className="text-xs font-medium">
                 {DAY_NAMES_SHORT[dayNum]}
               </span>
               <span
-                className={`text-xs w-6 h-6 flex items-center justify-center rounded-full ${
+                className={`text-sm w-8 h-8 flex items-center justify-center rounded-full font-medium ${
                   isSelected
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-blue-600 text-white dark:bg-blue-500'
                     : isTodayDate
-                      ? 'bg-blue-100 text-blue-600'
+                      ? 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
                       : ''
                 }`}
               >
@@ -111,7 +111,7 @@ export function SchedulePage() {
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <p className="text-gray-400">Загрузка...</p>
+            <p className="text-gray-500 dark:text-neutral-400">Загрузка...</p>
           </div>
         ) : (
           <DaySchedule
