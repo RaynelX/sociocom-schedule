@@ -1,90 +1,82 @@
-import type { UpcomingEventGroup } from '../hooks/use-upcoming-events';
+import type { UpcomingEvent } from '../hooks/use-upcoming-events';
 
-const EVENT_CONFIG: Record<
-  string,
-  { label: string; badge: string; bg: string; darkBg: string; border: string }
-> = {
-  usr:           { label: 'УСР',          badge: 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300',  bg: 'bg-violet-50',  darkBg: 'dark:bg-violet-950/40',  border: 'border-l-violet-500' },
-  control_work:  { label: 'Контрольная',  badge: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',              bg: 'bg-red-50',     darkBg: 'dark:bg-red-950/40',     border: 'border-l-red-500' },
-  deadline:      { label: 'Дедлайн',      badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',      bg: 'bg-amber-50',   darkBg: 'dark:bg-amber-950/40',   border: 'border-l-amber-500' },
-  credit:        { label: 'Зачёт',        badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300',          bg: 'bg-teal-50',    darkBg: 'dark:bg-teal-950/40',    border: 'border-l-teal-500' },
-  exam:          { label: 'Экзамен',      badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300',          bg: 'bg-rose-50',    darkBg: 'dark:bg-rose-950/40',    border: 'border-l-rose-500' },
-  consultation:  { label: 'Консультация', badge: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300',              bg: 'bg-sky-50',     darkBg: 'dark:bg-sky-950/40',     border: 'border-l-sky-500' },
-  other:         { label: 'Событие',      badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',  bg: 'bg-purple-50',  darkBg: 'dark:bg-purple-950/40',  border: 'border-l-purple-500' },
+const EVENT_BADGE: Record<string, { label: string; className: string }> = {
+  usr:           { label: 'УСР',    className: 'bg-violet-100 text-violet-700 dark:bg-violet-500/40 dark:text-violet-300' },
+  control_work:  { label: 'КР',     className: 'bg-red-100 text-red-700 dark:bg-red-500/40 dark:text-red-300' },
+  deadline:      { label: 'Дедл.',  className: 'bg-amber-100 text-amber-700 dark:bg-amber-500/40 dark:text-amber-300' },
+  credit:        { label: 'Зачёт',  className: 'bg-teal-100 text-teal-700 dark:bg-teal-500/40 dark:text-teal-300' },
+  exam:          { label: 'Экз.',   className: 'bg-rose-100 text-rose-700 dark:bg-rose-500/40 dark:text-rose-300' },
+  consultation:  { label: 'Конс.',  className: 'bg-sky-100 text-sky-700 dark:bg-sky-500/40 dark:text-sky-300' },
+  other:         { label: 'Соб.',   className: 'bg-purple-100 text-purple-700 dark:bg-purple-500/40 dark:text-purple-300' },
 };
 
 interface Props {
-  groups: UpcomingEventGroup[];
+  events: UpcomingEvent[];
 }
 
-export function UpcomingEventsBlock({ groups }: Props) {
-  if (groups.length === 0) return null;
+export function UpcomingEventsBlock({ events }: Props) {
+  if (events.length === 0) return null;
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2 px-1">
-        Ближайшие события
-      </h3>
+      {/* Заголовок */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+          Ближайшие события
+        </h3>
+        <button className="text-sm text-blue-600 dark:text-blue-400 font-medium active:opacity-70 transition-opacity">
+          Показать все &rsaquo;
+        </button>
+      </div>
 
-      <div className="space-y-4">
-        {groups.map((group) => (
-          <div key={group.date}>
-            <p className="text-xs font-medium text-neutral-400 dark:text-neutral-500 mb-2 px-1">
-              {group.label}
-            </p>
-
-            <div className="space-y-2.5">
-              {group.events.map((event) => {
-                const config = EVENT_CONFIG[event.eventType] ?? EVENT_CONFIG.other;
-
-                return (
-                  <div
-                    key={event.id}
-                    className={`
-                      rounded-xl
-                      border-t border-r border-b border-gray-200
-                      dark:border-t-transparent dark:border-r-transparent dark:border-b-transparent
-                      border-l-4 ${config.border}
-                      ${config.bg} ${config.darkBg}
-                      p-4
-                    `}
-                  >
-                    {/* Время */}
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                        {event.pairLabel}
-                      </span>
-                    </div>
-
-                    {/* Предмет */}
-                    <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                      {event.subjectName ?? 'Событие'}
-                    </p>
-
-                    {/* Детали */}
-                    <div className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-                      <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${config.badge}`}>
-                        {config.label}
-                      </span>
-                      {event.room && (
-                        <span className="ml-auto text-neutral-500 dark:text-neutral-400">
-                          {event.room === 'ДОТ' ? 'ДОТ' : `ауд. ${event.room}`}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Описание */}
-                    {event.description && (
-                      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 leading-snug line-clamp-3">
-                        {event.description}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      {/* Карточка */}
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-200 dark:border-transparent px-4 py-2">
+        {events.map((event) => (
+          <EventRow key={event.id} event={event} />
         ))}
+      </div>
+    </div>
+  );
+}
+
+function EventRow({ event }: { event: UpcomingEvent }) {
+  const badge = EVENT_BADGE[event.eventType] ?? EVENT_BADGE.other;
+
+  return (
+    <div className="flex gap-2 py-2">
+      {/* Дата */}
+      <span className="text-sm text-neutral-400 dark:text-neutral-500 w-16 shrink-0 pt-0.5">
+        {event.dateLabel}
+      </span>
+
+      {/* Бейдж */}
+      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 h-fit mt-0.5 ${badge.className}`}>
+        {badge.label}
+      </span>
+
+      {/* Текст + пара */}
+      <div className="flex-1 min-w-0 flex gap-2">
+        <p className="text-sm flex-1">
+          {event.subjectName && (
+            <span className="text-neutral-800 dark:text-neutral-200">
+              {event.subjectName}
+            </span>
+          )}
+          {event.subjectName && event.description && (
+            <span className="text-neutral-400 dark:text-neutral-500"> — </span>
+          )}
+          {event.description && (
+            <span className="text-neutral-400 dark:text-neutral-500">
+              {event.description}
+            </span>
+          )}
+        </p>
+
+        {event.timeLabel && (
+          <span className="text-sm text-neutral-400 dark:text-neutral-500 shrink-0 pt-0.5">
+            {event.timeLabel}
+          </span>
+        )}
       </div>
     </div>
   );

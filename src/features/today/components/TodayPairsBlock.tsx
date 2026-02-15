@@ -15,12 +15,12 @@ const TYPE_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 const EVENT_BADGE: Record<string, { label: string; className: string }> = {
-  usr:           { label: 'УСР',    className: 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300' },
-  control_work:  { label: 'КР',     className: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
-  credit:        { label: 'Зачёт',  className: 'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300' },
-  exam:          { label: 'Экз.',   className: 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300' },
-  consultation:  { label: 'Конс.',  className: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300' },
-  other:         { label: 'Соб.',   className: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' },
+  usr:           { label: 'УСР',    className: 'bg-violet-100 text-violet-700 dark:bg-violet-500/40500/40 dark:text-violet-300' },
+  control_work:  { label: 'КР',     className: 'bg-red-100 text-red-700 dark:bg-red-500/40 dark:text-red-300' },
+  credit:        { label: 'Зачёт',  className: 'bg-teal-100 text-teal-700 dark:bg-teal-500/40 dark:text-teal-300' },
+  exam:          { label: 'Экз.',   className: 'bg-rose-100 text-rose-700 dark:bg-rose-500/40 dark:text-rose-300' },
+  consultation:  { label: 'Конс.',  className: 'bg-sky-100 text-sky-700 dark:bg-sky-500/40 dark:text-sky-300' },
+  other:         { label: 'Соб.',   className: 'bg-purple-100 text-purple-700 dark:bg-purple-500/40 dark:text-purple-300' },
 };
 
 export function TodayPairsBlock({ data }: Props) {

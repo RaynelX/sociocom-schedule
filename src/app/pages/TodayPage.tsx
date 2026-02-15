@@ -33,7 +33,7 @@ export function TodayPage() {
   return (
     <div className="p-4 space-y-5">
       <TodayPairsBlock data={todaySchedule} />
-      <UpcomingEventsBlock groups={upcomingEvents.groups} />
+      <UpcomingEventsBlock events={upcomingEvents.events} />
       <SemesterBlock data={semesterProgress} />
     </div>
   );
