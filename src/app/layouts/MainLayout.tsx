@@ -2,6 +2,8 @@ import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Calendar, BookOpen, Menu } from 'lucide-react';
 import { useSync } from '../../database/sync/SyncProvider';
 import { usePageHeader } from '../providers/PageHeaderProvider';
+import { useSwUpdate } from '../hooks/use-sw-update';
+import { UpdateBanner } from '../components/UpdateBanner';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Сегодня' },
@@ -12,6 +14,7 @@ const navItems = [
 
 export function MainLayout() {
   const header = usePageHeader();
+  const sw = useSwUpdate();
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-black">
@@ -34,6 +37,9 @@ export function MainLayout() {
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
+
+      {/* Баннер обновления */}
+      <UpdateBanner sw={sw} />
 
       {/* Bottom Navigation */}
       <nav className="shrink-0 flex border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 pb-[env(safe-area-inset-bottom)]">
