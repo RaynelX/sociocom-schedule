@@ -17,13 +17,13 @@ export function DaySchedule({ slots, floatingEvents, date }: Props) {
     return (
       <div>
         {floatingEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+          <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-neutral-500">
             <p className="text-lg">Нет пар</p>
             <p className="text-sm mt-1">Свободный день</p>
           </div>
         ) : (
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2.5">
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2.5">
               События дня
             </p>
             <div className="space-y-2.5">

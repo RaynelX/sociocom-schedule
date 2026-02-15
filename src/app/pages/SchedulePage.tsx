@@ -13,6 +13,7 @@ import {
 import { useDatabase } from '../providers/DatabaseProvider';
 import { useRxCollection } from '../../database/hooks/use-rx-collection';
 import { DAY_NAMES_SHORT } from '../../shared/constants/days';
+import { useSetPageHeader } from '../providers/PageHeaderProvider';
 
 // ============================================================
 // Компонент страницы
@@ -41,6 +42,8 @@ export function SchedulePage() {
   const goToPrevWeek = () => setSelectedDate((d) => addDays(d, -7));
   const goToNextWeek = () => setSelectedDate((d) => addDays(d, 7));
   const goToDay = (dayOffset: number) => setSelectedDate(addDays(monday, dayOffset));
+
+  useSetPageHeader({title: 'Расписание'});
 
   return (
     <div className="flex flex-col h-full">

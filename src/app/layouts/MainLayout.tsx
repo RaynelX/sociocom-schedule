@@ -1,6 +1,7 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Calendar, BookOpen, Menu } from 'lucide-react';
 import { useSync } from '../../database/sync/SyncProvider';
+import { usePageHeader } from '../providers/PageHeaderProvider';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Сегодня' },
@@ -10,11 +11,22 @@ const navItems = [
 ];
 
 export function MainLayout() {
+  const header = usePageHeader();
+
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-black">
       {/* Header */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3.5 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-neutral-100">Student Hub</h1>
+      <header className="shrink-0 flex items-center justify-between px-4 py-3 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
+        <div className='flex items-baseline gap-2'>
+          <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            {header.title}
+          </h1>
+          {header.subtitle && (
+            <span className="text-sm text-neutral-400 dark:text-neutral-500">
+              {header.subtitle}
+            </span>
+          )}
+        </div>
         <SyncIndicator />
       </header>
 

@@ -1,88 +1,40 @@
-import { useDatabase } from '../providers/DatabaseProvider';
-import { useSync } from '../../database/sync/SyncProvider';
-import { useRxCollection } from '../../database/hooks/use-rx-collection';
+import { useSetPageHeader } from '../providers/PageHeaderProvider';
+import { useTodaySchedule } from '../../features/today/hooks/use-today-schedule';
+import { useUpcomingEvents } from '../../features/today/hooks/use-upcoming-events';
+import { useSemesterProgress } from '../../features/today/hooks/use-semester-progress';
+import { TodayPairsBlock } from '../../features/today/components/TodayPairsBlock';
+import { UpcomingEventsBlock } from '../../features/today/components/UpcomingEventsBlock';
+import { SemesterBlock } from '../../features/today/components/SemesterBlock';
 
 export function TodayPage() {
-  const db = useDatabase();
-  const { status, triggerSync } = useSync();
+  const todaySchedule = useTodaySchedule();
+  const upcomingEvents = useUpcomingEvents();
+  const semesterProgress = useSemesterProgress();
 
-  const { data: subjects, loading: subjectsLoading } = useRxCollection(db.subjects);
-  const { data: teachers, loading: teachersLoading } = useRxCollection(db.teachers);
-  const { data: schedule, loading: scheduleLoading } = useRxCollection(db.schedule);
-  const { data: events }  = useRxCollection(db.events);
-  const { data: students } = useRxCollection(db.students);
+  const subtitle = new Intl.DateTimeFormat('ru-RU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date());
 
-  const isLoading = subjectsLoading || teachersLoading || scheduleLoading;
+  useSetPageHeader({
+    title: 'Сегодня',
+    subtitle: subtitle.charAt(0).toUpperCase() + subtitle.slice(1),
+  });
+
+  if (todaySchedule.loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-neutral-400">Загрузка...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Сегодня</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Статус: {status.state}
-          {status.error && <span className="text-red-500"> — {status.error}</span>}
-        </p>
-      </div>
-
-      {/* Статистика синхронизации */}
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Предметы" count={subjects.length} loading={isLoading} />
-        <StatCard label="Преподаватели" count={teachers.length} loading={isLoading} />
-        <StatCard label="Записи расписания" count={schedule.length} loading={isLoading} />
-        <StatCard label="События" count={events.length} loading={isLoading} />
-        <StatCard label="Студенты" count={students.length} loading={isLoading} />
-      </div>
-
-      {/* Список предметов — доказательство работы sync */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">Предметы</h3>
-        {subjects.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            {isLoading ? 'Загрузка...' : 'Нет данных. Добавьте предметы в Supabase.'}
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {subjects.map((s) => (
-              <li
-                key={s.id}
-                className="p-3 bg-white rounded-lg border border-gray-200"
-              >
-                <p className="font-medium text-gray-900">{s.name}</p>
-                {s.short_name && (
-                  <p className="text-sm text-gray-500">{s.short_name}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Кнопка принудительной синхронизации */}
-      <button
-        onClick={triggerSync}
-        className="w-full py-2.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg active:bg-blue-100 transition-colors"
-      >
-        Синхронизировать вручную
-      </button>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  count,
-  loading,
-}: {
-  label: string;
-  count: number;
-  loading: boolean;
-}) {
-  return (
-    <div className="p-3 bg-white rounded-lg border border-gray-200">
-      <p className="text-2xl font-bold text-gray-900">
-        {loading ? '—' : count}
-      </p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+    <div className="p-4 space-y-5">
+      <TodayPairsBlock data={todaySchedule} />
+      <UpcomingEventsBlock groups={upcomingEvents.groups} />
+      <SemesterBlock data={semesterProgress} />
     </div>
   );
 }
