@@ -6,7 +6,6 @@ import { buildDaySchedule } from '../../schedule/utils/schedule-builder';
 import {
   getDayOfWeek,
   addDays,
-  toISODate,
 } from '../../schedule/utils/week-utils';
 import type { DaySlot } from '../../schedule/utils/schedule-builder';
 
@@ -79,27 +78,6 @@ export function useTodaySchedule(): TodayScheduleData {
     const todayResult = buildDaySchedule({ ...buildParams, date: today });
     const todayPairs = todayResult.slots.filter((s) => s.pair !== null);
     const hasPairsToday = todayPairs.length > 0;
-
-
-    if (hasPairsToday && toISODate(today) === toISODate(now)) {
-      for (let i = 0; i < todayPairs.length; i++) {
-        const slot = todayPairs[i];
-        const [sh, sm] = slot.startTime.split(':').map(Number);
-        const [eh, em] = slot.endTime.split(':').map(Number);
-        const startMin = sh * 60 + sm;
-        const endMin = eh * 60 + em;
-
-        if (currentMinutes >= startMin && currentMinutes <= endMin) {
-          const nextPair = todayPairs[i + 1] ?? null;
-          let breakMinutes: number | null = null;
-          if (nextPair) {
-            const [nsh, nsm] = nextPair.startTime.split(':').map(Number);
-            breakMinutes = (nsh * 60 + nsm) - endMin;
-          }
-          break;
-        }
-      }
-    }
 
     // Все пары закончились?
     let allPairsFinished = false;
